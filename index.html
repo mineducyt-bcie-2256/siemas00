@@ -219,6 +219,7 @@
 
             m.bindPopup(`<div style="max-height:200px; overflow-y:auto; min-width:200px;">
                 <b>${p['Centro Educativo']}</b><table class="popup-tabla">${tabla}</table>
+                <button class="btn-ruta" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.Latitud},${p.Longitud}')">GPS</button> 
             </div>`);
             capaMarcadores.addLayer(m);
         });
