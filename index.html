@@ -4,286 +4,788 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Monitoreo MINEDUCYT – BCIE</title>
-    
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        :root { --azul: #002350; --blanco: #ffffff; --verde: #28a745; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f4f4; }
-        
-        header { background: var(--azul); color: var(--blanco); padding: 15px 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { margin: 0; font-size: 1.3rem; }
-        header p { margin: 4px 0 0; font-size: 0.9rem; opacity: 0.8; }
+        /* ─── Variables ─────────────────────────────────────── */
+        :root {
+            --azul:       #002350;
+            --azul-med:   #003580;
+            --azul-claro: #e8f0ff;
+            --verde:      #28a745;
+            --verde-dark: #1e7e34;
+            --rojo:       #dc3545;
+            --naranja:    #fd7e14;
+            --amarillo:   #ffc107;
+            --gris-bg:    #f0f2f6;
+            --gris-borde: #dee2e6;
+            --blanco:     #ffffff;
+            --sombra:     0 4px 15px rgba(0,35,80,.12);
+            --radio:      10px;
+            --transicion: all .25s ease;
+        }
 
+        /* ─── Reset / Base ──────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex;
+               flex-direction: column; height: 100vh; background: var(--gris-bg); overflow: hidden; }
+
+        /* ─── Header ────────────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, var(--azul) 0%, var(--azul-med) 100%);
+            color: var(--blanco); padding: 0 25px;
+            height: 64px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 3px 12px rgba(0,0,0,.35); z-index: 1100; flex-shrink: 0;
+        }
+        .header-brand { display: flex; align-items: center; gap: 14px; }
+        .header-badge {
+            background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+            border-radius: 8px; padding: 6px 12px; text-align: center;
+        }
+        .header-badge span { display: block; font-size: .65rem; opacity: .85; text-transform: uppercase; letter-spacing: .5px; }
+        .header-badge strong { font-size: 1rem; }
+        header h1 { margin: 0; font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+        header p  { margin: 2px 0 0; font-size: .8rem; opacity: .8; }
+        .header-actions { display: flex; gap: 10px; }
+
+        /* ─── Botones Cabecera ───────────────────────────────── */
+        .btn-header {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 15px; border-radius: var(--radio); font-weight: 600; font-size: .8rem;
+            cursor: pointer; border: none; transition: var(--transicion); white-space: nowrap;
+        }
+        .btn-jpg  { background: var(--naranja); color: var(--blanco); }
+        .btn-xlsx { background: var(--verde);   color: var(--blanco); }
+        .btn-jpg:hover  { background: #e0680b; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.2); }
+        .btn-xlsx:hover { background: var(--verde-dark); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.2); }
+
+        /* ─── Layout principal ───────────────────────────────── */
         .layout { display: flex; flex: 1; overflow: hidden; }
 
-        .sidebar { width: 380px; background: white; border-right: 1px solid #ddd; overflow-y: auto; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-        
-        .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--azul); color: white; padding: 10px; border-radius: 6px; text-align: center; }
-        .stat-card.filter-stat { background: var(--verde); }
-        .stat-card span { display: block; font-size: 1.2rem; font-weight: bold; }
-        .stat-card label { font-size: 0.7rem; text-transform: uppercase; opacity: 0.9; }
+        /* ─── Sidebar ────────────────────────────────────────── */
+        .sidebar {
+            width: 370px; flex-shrink: 0;
+            background: var(--blanco); border-right: 1px solid var(--gris-borde);
+            overflow-y: auto; display: flex; flex-direction: column; gap: 0;
+            box-shadow: 3px 0 15px rgba(0,0,0,.07);
+        }
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #c0c8d8; border-radius: 10px; }
 
-        .status-info { background: #e7f3ff; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; color: #004085; border: 1px solid #b8daff; }
-        
-        .filter-item { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #eee; }
-        .filter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .filter-header label { font-weight: bold; font-size: 0.85rem; color: var(--azul); }
-        
-        .btn-analisis { font-size: 0.75rem; padding: 5px 10px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: #fff; transition: 0.3s; }
-        .btn-analisis.active { background: var(--verde); color: white; border-color: #1e7e34; }
+        .sidebar-section { padding: 14px 16px; border-bottom: 1px solid #f0f2f6; }
+        .sidebar-section:last-child { border-bottom: none; }
 
-        .btn-exportar { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        /* ─── Cards de estadísticas ─────────────────────────── */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-card {
+            border-radius: var(--radio); padding: 12px 10px; text-align: center;
+            position: relative; overflow: hidden; cursor: default;
+            transition: var(--transicion);
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--sombra); }
+        .stat-card.total  { background: linear-gradient(135deg, var(--azul) 0%, var(--azul-med) 100%); color: #fff; }
+        .stat-card.filtro { background: linear-gradient(135deg, var(--verde) 0%, #20c997 100%);  color: #fff; }
+        .stat-card.activo { background: linear-gradient(135deg, var(--naranja) 0%, #e0520a 100%); color: #fff; }
+        .stat-card.mapa   { background: linear-gradient(135deg, #17a2b8 0%, #0e7f8e 100%);       color: #fff; }
+        .stat-card .icon  { font-size: 1.5rem; margin-bottom: 4px; display: block; }
+        .stat-card .num   { display: block; font-size: 1.4rem; font-weight: 800; line-height: 1; }
+        .stat-card .lbl   { font-size: .62rem; text-transform: uppercase; letter-spacing: .6px; opacity: .88; }
 
-        select, .input-busqueda { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        /* ─── Barra de carga ─────────────────────────────────── */
+        .estado-carga {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--azul-claro); border: 1px solid #b8daff;
+            border-radius: 8px; padding: 10px 14px; font-size: .82rem; color: #003a8c;
+        }
+        .spinner {
+            width: 16px; height: 16px; border: 2px solid #c0ccef;
+            border-top-color: var(--azul-med); border-radius: 50%;
+            animation: spin .7s linear infinite; flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .estado-carga.ok    { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .estado-carga.error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
 
-        #contenedor-graficos { margin-top: 20px; }
-        .chart-container { background: #fff; border-top: 3px solid var(--azul); padding: 10px; margin-bottom: 15px; }
+        /* ─── Sección de filtros ─────────────────────────────── */
+        .section-title {
+            font-size: .75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: #8090aa; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .section-title::after { content: ''; flex: 1; height: 1px; background: #e8ecf2; }
 
-        #map-container { flex: 1; display: flex; flex-direction: column; }
-        #map { flex: 2; z-index: 1; }
+        .search-box { position: relative; }
+        .search-box input {
+            width: 100%; padding: 9px 36px 9px 36px; border: 1.5px solid var(--gris-borde);
+            border-radius: 8px; font-size: .85rem; transition: var(--transicion); background: #f8f9fa;
+        }
+        .search-box input:focus { outline: none; border-color: var(--azul-med); background: #fff; box-shadow: 0 0 0 3px rgba(0,53,128,.1); }
+        .search-icon  { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: .9rem; pointer-events: none; }
+        .search-clear {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            cursor: pointer; font-size: .85rem; color: #aaa; padding: 2px 5px;
+            border-radius: 50%; background: none; border: none; display: none;
+        }
+        .search-clear:hover { background: #eee; color: #555; }
 
-        /* Estilos de la tabla */
-        #tabla-centros-container { flex: 1; background: white; border-top: 5px solid var(--azul); overflow-y: auto; padding: 15px; }
-        .tabla-datos { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        .tabla-datos th { background: #f8f9fa; color: var(--azul); position: sticky; top: 0; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
-        .tabla-datos td { padding: 8px; border-bottom: 1px solid #eee; }
+        .filter-item  { margin-bottom: 10px; }
+        .filter-label {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 5px;
+        }
+        .filter-label span { font-size: .78rem; font-weight: 600; color: #3a4a60; }
+        .btn-analisis {
+            font-size: .68rem; padding: 3px 9px; cursor: pointer; border-radius: 20px;
+            border: 1.5px solid var(--gris-borde); background: #fff; color: #667; font-weight: 600;
+            transition: var(--transicion);
+        }
+        .btn-analisis:hover  { border-color: var(--verde); color: var(--verde); }
+        .btn-analisis.active { background: var(--verde); color: #fff; border-color: var(--verde-dark); }
 
-        .popup-tabla { font-size: 11px; width: 100%; border-collapse: collapse; margin-top: 8px; }
-        .popup-tabla td { border-bottom: 1px solid #eee; padding: 5px 2px; }
-        .btn-ruta { background: var(--verde); color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        select.filtro-select {
+            width: 100%; padding: 7px 10px; border: 1.5px solid var(--gris-borde);
+            border-radius: 8px; font-size: .82rem; color: #333; background: #fafbfc;
+            transition: var(--transicion); appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23667'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+        }
+        select.filtro-select:focus { outline: none; border-color: var(--azul-med); background-color: #fff; box-shadow: 0 0 0 3px rgba(0,53,128,.1); }
+
+        .btn-limpiar {
+            width: 100%; padding: 9px; border: 1.5px dashed var(--rojo); background: #fff8f8;
+            color: var(--rojo); border-radius: 8px; cursor: pointer; font-size: .8rem; font-weight: 600;
+            transition: var(--transicion);
+        }
+        .btn-limpiar:hover { background: var(--rojo); color: #fff; }
+
+        /* ─── Gráficos ───────────────────────────────────────── */
+        .chart-wrap {
+            background: #fff; border-left: 4px solid var(--azul); border-radius: 0 8px 8px 0;
+            padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+        .chart-title { font-size: .75rem; font-weight: 700; color: var(--azul); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .4px; }
+
+        /* ─── Área Mapa + Tabla ──────────────────────────────── */
+        #map-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #map { flex: 1; min-height: 0; z-index: 1; }
+
+        /* ─── Tabla inferior ─────────────────────────────────── */
+        #tabla-centros-container {
+            height: 240px; background: white; border-top: 4px solid var(--azul);
+            display: flex; flex-direction: column;
+        }
+        .tabla-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 16px; border-bottom: 1px solid var(--gris-borde); flex-shrink: 0;
+        }
+        .tabla-header h4 { margin: 0; color: var(--azul); font-size: .9rem; }
+        .tabla-badge {
+            background: var(--azul-claro); color: var(--azul-med); font-size: .72rem;
+            font-weight: 700; padding: 3px 10px; border-radius: 20px;
+        }
+        .tabla-scroll { overflow-y: auto; flex: 1; }
+        .tabla-scroll::-webkit-scrollbar { width: 5px; }
+        .tabla-scroll::-webkit-scrollbar-thumb { background: #cfd6e2; border-radius: 10px; }
+
+        .tabla-datos { width: 100%; border-collapse: collapse; font-size: .78rem; }
+        .tabla-datos thead th {
+            background: #f4f6fb; color: var(--azul); position: sticky; top: 0; z-index: 2;
+            padding: 9px 12px; text-align: left; border-bottom: 2px solid #dce3ef;
+            font-size: .72rem; text-transform: uppercase; letter-spacing: .4px; white-space: nowrap;
+        }
+        .tabla-datos tbody tr { transition: background .15s; cursor: pointer; }
+        .tabla-datos tbody tr:hover { background: var(--azul-claro); }
+        .tabla-datos td { padding: 8px 12px; border-bottom: 1px solid #f0f2f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+        .badge-etapa {
+            display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .68rem; font-weight: 700;
+        }
+
+        /* ─── Leyenda del mapa ───────────────────────────────── */
+        .mapa-leyenda {
+            background: rgba(255,255,255,.95); backdrop-filter: blur(4px);
+            padding: 10px 14px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,.18);
+            font-size: .75rem; max-width: 200px; max-height: 200px; overflow-y: auto;
+        }
+        .mapa-leyenda h4 { margin: 0 0 7px; font-size: .75rem; color: var(--azul); text-transform: uppercase; letter-spacing: .4px; }
+        .leyenda-item { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+        .leyenda-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ─── Popup mejorado ─────────────────────────────────── */
+        .popup-card { min-width: 220px; max-width: 280px; }
+        .popup-card h3 { margin: 0 0 10px; font-size: .88rem; color: var(--azul); border-bottom: 2px solid var(--azul-claro); padding-bottom: 7px; }
+        .popup-tabla { width: 100%; font-size: .74rem; border-collapse: collapse; }
+        .popup-tabla tr:nth-child(even) td { background: #f8f9fa; }
+        .popup-tabla td { padding: 4px 5px; border-bottom: 1px solid #f0f2f5; }
+        .popup-tabla td:first-child { font-weight: 600; color: #555; width: 45%; }
+        .btn-gps {
+            margin-top: 10px; width: 100%; padding: 8px; background: var(--verde); color: #fff;
+            border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: .8rem;
+            display: flex; align-items: center; justify-content: center; gap: 6px; transition: var(--transicion);
+        }
+        .btn-gps:hover { background: var(--verde-dark); }
+
+        /* ─── Toast ──────────────────────────────────────────── */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
+            background: #222; color: #fff; padding: 10px 22px; border-radius: 30px;
+            font-size: .82rem; opacity: 0; transition: all .35s ease; z-index: 9999; pointer-events: none;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ─── Mapa: control centrar ──────────────────────────── */
+        .leaflet-control-centrar a {
+            font-size: 1rem !important; font-weight: bold !important;
+            display: flex !important; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
 
+<!-- ─── HEADER ───────────────────────────────────────────── -->
 <header>
-    <div>
-        <h1>Monitoreo y seguimiento de condiciones ambientales y sociales</h1>
-        <p>Programa Mi Nueva Escuela MINEDUCYT – BCIE</p>
+    <div class="header-brand">
+        <div class="header-badge">
+            <span>Programa</span>
+            <strong>MINEDUCYT</strong>
+        </div>
+        <div>
+            <h1>Monitoreo y Seguimiento de Condiciones Ambientales y Sociales</h1>
+            <p>📍 Mi Nueva Escuela — BCIE &nbsp;|&nbsp; Sistema de Gestión de Proyectos</p>
+        </div>
     </div>
-    <button class="btn-exportar" onclick="exportarCaptura()">📷 Exportar Panel (JPG)</button>
+    <div class="header-actions">
+        <button class="btn-header btn-xlsx" onclick="exportarExcel()">📊 Exportar Excel</button>
+        <button class="btn-header btn-jpg"  onclick="exportarCaptura()">📷 Exportar JPG</button>
+    </div>
 </header>
 
 <div class="layout" id="captura-zona">
+
+    <!-- ─── SIDEBAR ──────────────────────────────────────── -->
     <aside class="sidebar">
-        <div class="stats-container">
-            <div class="stat-card">
-                <span id="total-global">0</span>
-                <label>Total Centros</label>
-            </div>
-            <div class="stat-card filter-stat">
-                <span id="total-filtrado">0</span>
-                <label>Filtrados</label>
+
+        <!-- Stats -->
+        <div class="sidebar-section">
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <span class="icon">🏫</span>
+                    <span class="num" id="total-global">0</span>
+                    <span class="lbl">Total Centros</span>
+                </div>
+                <div class="stat-card filtro">
+                    <span class="icon">🔍</span>
+                    <span class="num" id="total-filtrado">0</span>
+                    <span class="lbl">Filtrados</span>
+                </div>
+                <div class="stat-card activo">
+                    <span class="icon">📊</span>
+                    <span class="num" id="total-analisis">0</span>
+                    <span class="lbl">Análisis activos</span>
+                </div>
+                <div class="stat-card mapa">
+                    <span class="icon">📌</span>
+                    <span class="num" id="total-mapa">0</span>
+                    <span class="lbl">En mapa</span>
+                </div>
             </div>
         </div>
 
-        <div class="status-info" id="estadoCarga">⏳ Sincronizando datos...</div>
-
-        <div class="filter-item">
-            <label><b>Buscador (Código / Centro Educativo)</b></label>
-            <input type="text" id="busquedaPrincipal" class="input-busqueda" placeholder="Ej: 10588 o Nombre..." onkeyup="ejecutarFiltros()">
+        <!-- Estado de carga -->
+        <div class="sidebar-section">
+            <div class="estado-carga" id="estadoCarga">
+                <div class="spinner" id="spinnerEstado"></div>
+                <span id="msgEstado">Sincronizando datos…</span>
+            </div>
         </div>
 
-        <div id="filtros-dinamicos"></div>
+        <!-- Búsqueda -->
+        <div class="sidebar-section">
+            <div class="section-title">🔎 Búsqueda rápida</div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="busquedaPrincipal" placeholder="Código o nombre del centro…"
+                       oninput="debounce(ejecutarFiltros, 300)()" autocomplete="off">
+                <button class="search-clear" id="btnLimpiarBusq" onclick="limpiarBusqueda()">✕</button>
+            </div>
+        </div>
 
-        <div id="contenedor-graficos"></div>
+        <!-- Filtros dinámicos -->
+        <div class="sidebar-section">
+            <div class="section-title">⚙️ Filtros</div>
+            <div id="filtros-dinamicos"></div>
+            <button class="btn-limpiar" onclick="limpiarTodosFiltros()">🗑️ Limpiar todos los filtros</button>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="sidebar-section" id="seccion-graficos" style="display:none;">
+            <div class="section-title">📈 Análisis</div>
+            <div id="contenedor-graficos"></div>
+        </div>
     </aside>
 
+    <!-- ─── MAPA + TABLA ──────────────────────────────────── -->
     <div id="map-container">
         <div id="map"></div>
         <div id="tabla-centros-container">
-            <h4 style="margin:0 0 10px 0; color:var(--azul);">Centros Educativos Seleccionados</h4>
-            <table class="tabla-datos">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Centro Educativo</th>
-                        <th>Departamento</th>
-                        <th>Etapa</th>
-                    </tr>
-                </thead>
-                <tbody id="cuerpo-tabla"></tbody>
-            </table>
+            <div class="tabla-header">
+                <h4>📋 Centros Educativos Seleccionados</h4>
+                <span class="tabla-badge" id="badge-tabla">0 registros</span>
+            </div>
+            <div class="tabla-scroll">
+                <table class="tabla-datos">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Código</th>
+                            <th>Centro Educativo</th>
+                            <th>Departamento</th>
+                            <th>Etapa</th>
+                            <th>Estado PEGAS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Toast -->
+<div id="toast"></div>
+
 <script>
-    let mapa, capaMarcadores, datosBrutos = [], camposAnalisisActivos = [], objetosGraficos = {};
-    let mapaBase, satelite, topografico;
+// ════════════════════════════════════════════════════════════════
+//  CONSTANTES & ESTADO
+// ════════════════════════════════════════════════════════════════
+const NOMBRE_ARCHIVO = "bdatos_bcie26.xlsx";
 
-    const NOMBRE_ARCHIVO = "bdatos_bcie26.xlsx"; 
-    const COLORES_PALETA = ['#002350', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6610f2', '#fd7e14', '#20c997', '#e83e8c', '#6f42c1'];
+const PALETA = [
+    '#002350','#28a745','#ffc107','#dc3545','#17a2b8',
+    '#6610f2','#fd7e14','#20c997','#e83e8c','#6f42c1',
+    '#0dcaf0','#198754','#d63384','#0d6efd','#ff6b35'
+];
 
-    const configuracionFiltros = [
-        { etiqueta: "Departamento", campo: "Departamento" },
-        { etiqueta: "Empresa Obras", campo: "Empresa obras" },
-        { etiqueta: "Número de Contrato", campo: "Número de contrato" },
-        { etiqueta: "Empresa Supervisión", campo: "Empresa supervisión" },
-        { etiqueta: "Administrador de Contrato", campo: "Administrador de contrato" },
-        { etiqueta: "Etapa", campo: "Etapa" },
-        { etiqueta: "Estado de PEGAS", campo: "Estado de PEGAS" },
-        { etiqueta: "Reubicación Temporal", campo: "Reubicación Temporal" }
-    ];
+const ETAPA_COLORES = {
+    default: '#002350'
+};
 
-    function iniciarMapa() {
-        mapaBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' });
-        satelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
-        topografico = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: 'OpenTopoMap' });
+const CONF_FILTROS = [
+    { etiqueta: "Departamento",            campo: "Departamento" },
+    { etiqueta: "Empresa Obras",           campo: "Empresa obras" },
+    { etiqueta: "Número de Contrato",      campo: "Número de contrato" },
+    { etiqueta: "Empresa Supervisión",     campo: "Empresa supervisión" },
+    { etiqueta: "Administrador Contrato",  campo: "Administrador de contrato" },
+    { etiqueta: "Etapa",                   campo: "Etapa" },
+    { etiqueta: "Estado de PEGAS",         campo: "Estado de PEGAS" },
+    { etiqueta: "Reubicación Temporal",    campo: "Reubicación Temporal" }
+];
 
-        mapa = L.map('map', { center: [13.794, -88.896], zoom: 9, layers: [mapaBase] });
+let mapa, clusterCapa, leyendaControl;
+let datosBrutos       = [];
+let datosActuales     = [];
+let camposAnalisis    = [];
+let objetosGraficos   = {};
+let _debounceTimer    = null;
 
-        const capasBase = { "Mapa de Calles": mapaBase, "Satelital": satelite, "Topográfico": topografico };
-        L.control.layers(capasBase).addTo(mapa);
-        capaMarcadores = L.layerGroup().addTo(mapa);
-        
-        cargarDatosDesdeGitHub();
-    }
+// ════════════════════════════════════════════════════════════════
+//  UTILIDADES
+// ════════════════════════════════════════════════════════════════
+const debounce = (fn, delay) => (...args) => {
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(() => fn(...args), delay);
+};
 
-    async function cargarDatosDesdeGitHub() {
-        try {
-            const t = new Date().getTime();
-            const respuesta = await fetch(`${NOMBRE_ARCHIVO}?t=${t}`);
-            const buffer = await respuesta.arrayBuffer();
-            const libro = XLSX.read(new Uint8Array(buffer), { type: 'array' });
-            const json = XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]]);
-            
-            datosBrutos = json.filter(d => !isNaN(parseFloat(d.Latitud)) && !isNaN(parseFloat(d.Longitud)));
-            document.getElementById('total-global').innerText = datosBrutos.length;
-            
-            crearControlesFiltro();
-            ejecutarFiltros();
-            document.getElementById('estadoCarga').innerText = "✅ Datos actualizados";
-        } catch (error) {
-            document.getElementById('estadoCarga').innerText = "❌ Error al cargar datos";
+function mostrarToast(msg, icono = 'ℹ️') {
+    const t = document.getElementById('toast');
+    t.textContent = `${icono} ${msg}`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function setEstado(tipo, msg) {
+    const el    = document.getElementById('estadoCarga');
+    const spin  = document.getElementById('spinnerEstado');
+    const texto = document.getElementById('msgEstado');
+    el.className = 'estado-carga ' + tipo;
+    spin.style.display  = tipo === 'ok' || tipo === 'error' ? 'none' : 'block';
+    texto.textContent   = msg;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MAPA
+// ════════════════════════════════════════════════════════════════
+function iniciarMapa() {
+    const calles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors', maxZoom: 19
+    });
+    const satelite = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Esri', maxZoom: 19 }
+    );
+    const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: 'OpenTopoMap', maxZoom: 17
+    });
+
+    mapa = L.map('map', { center: [13.794, -88.896], zoom: 9, layers: [calles], zoomControl: false });
+
+    L.control.zoom({ position: 'topright' }).addTo(mapa);
+    L.control.layers(
+        { "🗺️ Calles": calles, "🛰️ Satelital": satelite, "🏔️ Topográfico": topo },
+        {}, { position: 'topright' }
+    ).addTo(mapa);
+
+    // Control personalizado: centrar mapa
+    const CtrlCentrar = L.Control.extend({
+        options: { position: 'topright' },
+        onAdd() {
+            const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-centrar');
+            btn.innerHTML = '<a title="Centrar en datos">🎯</a>';
+            L.DomEvent.on(btn, 'click', centrarMapa);
+            return btn;
         }
-    }
+    });
+    new CtrlCentrar().addTo(mapa);
 
-    function crearControlesFiltro() {
-        const contenedor = document.getElementById('filtros-dinamicos');
-        contenedor.innerHTML = '';
-        configuracionFiltros.forEach(conf => {
-            const valores = [...new Set(datosBrutos.map(d => d[conf.campo]).filter(Boolean))].sort();
-            const div = document.createElement('div');
-            div.className = 'filter-item';
-            div.innerHTML = `
-                <div class="filter-header">
-                    <label>${conf.etiqueta}</label>
-                    <button class="btn-analisis" id="btn-${conf.campo}" onclick="alternarAnalisis('${conf.campo}')">Analizar</button>
-                </div>
-                <select class="seleccion-filtro" data-campo="${conf.campo}" onchange="ejecutarFiltros()">
-                    <option value="">Todos</option>
-                    ${valores.map(v => `<option value="${v}">${v}</option>`).join('')}
-                </select>`;
-            contenedor.appendChild(div);
-        });
-    }
+    clusterCapa = L.markerClusterGroup({ maxClusterRadius: 40 });
+    mapa.addLayer(clusterCapa);
 
-    function ejecutarFiltros() {
-        const busqueda = document.getElementById('busquedaPrincipal').value.toLowerCase();
-        const selectores = document.querySelectorAll('.seleccion-filtro');
-        
-        const filtrados = datosBrutos.filter(d => {
-            const cumpleBusqueda = (d['Centro Educativo'] || "").toString().toLowerCase().includes(busqueda) || 
-                                   (d['Código'] || "").toString().toLowerCase().includes(busqueda);
-            let cumpleSelectores = true;
-            selectores.forEach(sel => {
-                if (sel.value && String(d[sel.dataset.campo]) !== sel.value) cumpleSelectores = false;
-            });
-            return cumpleBusqueda && cumpleSelectores;
-        });
+    cargarDatos();
+}
 
-        document.getElementById('total-filtrado').innerText = filtrados.length;
-        actualizarPuntosMapa(filtrados);
-        actualizarTabla(filtrados);
-        actualizarGraficos(filtrados);
-    }
+function centrarMapa() {
+    if (!datosActuales.length) return;
+    const coords = datosActuales.map(d => [parseFloat(d.Latitud), parseFloat(d.Longitud)]);
+    mapa.fitBounds(L.latLngBounds(coords), { padding: [40, 40] });
+    mostrarToast('Mapa centrado en los datos filtrados', '🎯');
+}
 
-    function actualizarPuntosMapa(datos) {
-        capaMarcadores.clearLayers();
-        // Usar el último campo de análisis activo para los colores
-        const campoActivo = camposAnalisisActivos[camposAnalisisActivos.length - 1];
-        let cats = campoActivo ? [...new Set(datosBrutos.map(d => d[campoActivo]).filter(Boolean))].sort() : [];
+// ════════════════════════════════════════════════════════════════
+//  DATOS
+// ════════════════════════════════════════════════════════════════
+async function cargarDatos() {
+    setEstado('', 'Descargando datos…');
+    try {
+        const res   = await fetch(`${NOMBRE_ARCHIVO}?t=${Date.now()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buf   = await res.arrayBuffer();
+        const libro = XLSX.read(new Uint8Array(buf), { type: 'array' });
+        const hoja  = libro.Sheets[libro.SheetNames[0]];
+        const json  = XLSX.utils.sheet_to_json(hoja);
 
-        datos.forEach(p => {
-            const color = campoActivo ? COLORES_PALETA[cats.indexOf(p[campoActivo]) % COLORES_PALETA.length] : "#002350";
-            const m = L.circleMarker([p.Latitud, p.Longitud], { radius: 8, fillColor: color, color: "#fff", weight: 1, fillOpacity: 0.9 });
-            
-            let tabla = "";
-            for (let c in p) if(c !== "Latitud" && c !== "Longitud") tabla += `<tr><td><b>${c}:</b></td><td>${p[c] || '-'}</td></tr>`;
+        datosBrutos = json.filter(d =>
+            !isNaN(parseFloat(d.Latitud)) && !isNaN(parseFloat(d.Longitud))
+        );
 
-            m.bindPopup(`<div style="max-height:200px; overflow-y:auto; min-width:200px;">
-                <b>${p['Centro Educativo']}</b><table class="popup-tabla">${tabla}</table>
-                <button class="btn-ruta" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.Latitud},${p.Longitud}')">GPS</button> 
-            </div>`);
-            capaMarcadores.addLayer(m);
-        });
-    }
+        document.getElementById('total-global').textContent = datosBrutos.length;
+        setEstado('ok', `✅ ${datosBrutos.length} centros cargados`);
+        mostrarToast(`${datosBrutos.length} centros educativos cargados`, '✅');
 
-    function actualizarTabla(datos) {
-        const tbody = document.getElementById('cuerpo-tabla');
-        tbody.innerHTML = datos.map(p => `
-            <tr>
-                <td>${p.Código || '-'}</td>
-                <td>${p['Centro Educativo'] || '-'}</td>
-                <td>${p.Departamento || '-'}</td>
-                <td>${p.Etapa || '-'}</td>
-            </tr>
-        `).join('');
-    }
-
-    function alternarAnalisis(campo) {
-        const index = camposAnalisisActivos.indexOf(campo);
-        if (index > -1) {
-            camposAnalisisActivos.splice(index, 1);
-            document.getElementById(`btn-${campo}`).classList.remove('active');
-        } else {
-            camposAnalisisActivos.push(campo);
-            document.getElementById(`btn-${campo}`).classList.add('active');
-        }
+        crearControlesFiltro();
         ejecutarFiltros();
+    } catch (err) {
+        setEstado('error', `❌ Error: ${err.message}`);
+        mostrarToast('No se pudo cargar el archivo de datos', '❌');
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FILTROS
+// ════════════════════════════════════════════════════════════════
+function crearControlesFiltro() {
+    const cont = document.getElementById('filtros-dinamicos');
+    cont.innerHTML = '';
+
+    CONF_FILTROS.forEach(({ etiqueta, campo }) => {
+        const vals = [...new Set(datosBrutos.map(d => d[campo]).filter(Boolean))].sort();
+        const div = document.createElement('div');
+        div.className = 'filter-item';
+        div.innerHTML = `
+            <div class="filter-label">
+                <span>${etiqueta}</span>
+                <button class="btn-analisis" id="btn-${CSS.escape(campo)}"
+                        onclick="alternarAnalisis('${campo}')">📊 Analizar</button>
+            </div>
+            <select class="filtro-select" data-campo="${campo}" onchange="ejecutarFiltros()">
+                <option value="">Todos</option>
+                ${vals.map(v => `<option value="${v}">${v}</option>`).join('')}
+            </select>`;
+        cont.appendChild(div);
+    });
+}
+
+function ejecutarFiltros() {
+    const busq = document.getElementById('busquedaPrincipal').value.trim().toLowerCase();
+    document.getElementById('btnLimpiarBusq').style.display = busq ? 'block' : 'none';
+
+    const selectores = [...document.querySelectorAll('.filtro-select')];
+
+    datosActuales = datosBrutos.filter(d => {
+        const matchBusq =
+            (d['Centro Educativo'] || '').toLowerCase().includes(busq) ||
+            (d['Código'] || '').toString().toLowerCase().includes(busq);
+
+        const matchSel = selectores.every(sel =>
+            !sel.value || String(d[sel.dataset.campo]) === sel.value
+        );
+        return matchBusq && matchSel;
+    });
+
+    document.getElementById('total-filtrado').textContent = datosActuales.length;
+    document.getElementById('total-mapa').textContent     = datosActuales.length;
+
+    actualizarMapa(datosActuales);
+    actualizarTabla(datosActuales);
+    actualizarGraficos(datosActuales);
+    actualizarLeyenda(datosActuales);
+}
+
+function limpiarBusqueda() {
+    document.getElementById('busquedaPrincipal').value = '';
+    document.getElementById('btnLimpiarBusq').style.display = 'none';
+    ejecutarFiltros();
+}
+
+function limpiarTodosFiltros() {
+    document.getElementById('busquedaPrincipal').value = '';
+    document.querySelectorAll('.filtro-select').forEach(s => s.value = '');
+    ejecutarFiltros();
+    mostrarToast('Todos los filtros han sido limpiados', '🗑️');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MAPA — marcadores
+// ════════════════════════════════════════════════════════════════
+function actualizarMapa(datos) {
+    clusterCapa.clearLayers();
+
+    const campoColor = camposAnalisis[camposAnalisis.length - 1];
+    const cats = campoColor
+        ? [...new Set(datosBrutos.map(d => d[campoColor]).filter(Boolean))].sort()
+        : [];
+
+    datos.forEach(p => {
+        const lat = parseFloat(p.Latitud);
+        const lng = parseFloat(p.Longitud);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const color = campoColor
+            ? PALETA[cats.indexOf(p[campoColor]) % PALETA.length]
+            : PALETA[0];
+
+        const marker = L.circleMarker([lat, lng], {
+            radius: 9, fillColor: color,
+            color: '#fff', weight: 1.5, fillOpacity: .9
+        });
+
+        // Filas del popup (excluye lat/lng)
+        const filas = Object.entries(p)
+            .filter(([k]) => k !== 'Latitud' && k !== 'Longitud')
+            .map(([k, v]) => `<tr><td>${k}</td><td>${v ?? '—'}</td></tr>`)
+            .join('');
+
+        marker.bindPopup(`
+            <div class="popup-card">
+                <h3>🏫 ${p['Centro Educativo'] || 'Sin nombre'}</h3>
+                <div style="max-height:170px; overflow-y:auto;">
+                    <table class="popup-tabla">${filas}</table>
+                </div>
+                <button class="btn-gps"
+                    onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}','_blank')">
+                    🧭 Navegar con GPS
+                </button>
+            </div>`, { maxWidth: 300 }
+        );
+
+        marker.on('click', () => resaltarFilaTabla(p['Código']));
+        clusterCapa.addLayer(marker);
+    });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LEYENDA
+// ════════════════════════════════════════════════════════════════
+function actualizarLeyenda(datos) {
+    if (leyendaControl) mapa.removeControl(leyendaControl);
+
+    const campo = camposAnalisis[camposAnalisis.length - 1];
+    if (!campo) return;
+
+    const cats = [...new Set(datos.map(d => d[campo]).filter(Boolean))].sort();
+    const items = cats.slice(0, 12).map((c, i) => `
+        <div class="leyenda-item">
+            <div class="leyenda-dot" style="background:${PALETA[i % PALETA.length]}"></div>
+            <span>${c}</span>
+        </div>`).join('');
+
+    leyendaControl = L.control({ position: 'bottomright' });
+    leyendaControl.onAdd = () => {
+        const d = L.DomUtil.create('div', 'mapa-leyenda');
+        d.innerHTML = `<h4>${campo}</h4>${items}${cats.length > 12 ? `<small>+${cats.length - 12} más…</small>` : ''}`;
+        return d;
+    };
+    leyendaControl.addTo(mapa);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TABLA
+// ════════════════════════════════════════════════════════════════
+const BADGE_COLORS = {
+    "Ejecución":   "#fd7e14",
+    "Finalizado":  "#28a745",
+    "Suspendido":  "#dc3545",
+    "Inicio":      "#17a2b8"
+};
+
+function colorBadge(etapa = '') {
+    const c = Object.entries(BADGE_COLORS).find(([k]) => etapa.includes(k));
+    return c ? c[1] : '#6c757d';
+}
+
+function actualizarTabla(datos) {
+    const tbody = document.getElementById('cuerpo-tabla');
+    tbody.innerHTML = datos.map((p, i) => `
+        <tr data-codigo="${p['Código']}" onclick="volarAMarcador(${parseFloat(p.Latitud)}, ${parseFloat(p.Longitud)})">
+            <td style="color:#aaa;">${i + 1}</td>
+            <td><b>${p['Código'] || '—'}</b></td>
+            <td title="${p['Centro Educativo'] || ''}">${p['Centro Educativo'] || '—'}</td>
+            <td>${p.Departamento || '—'}</td>
+            <td><span class="badge-etapa"
+                style="background:${colorBadge(p.Etapa || '')};color:#fff;">${p.Etapa || '—'}</span></td>
+            <td>${p['Estado de PEGAS'] || '—'}</td>
+        </tr>`).join('');
+
+    document.getElementById('badge-tabla').textContent = `${datos.length} registros`;
+}
+
+function resaltarFilaTabla(codigo) {
+    document.querySelectorAll('#cuerpo-tabla tr').forEach(tr => {
+        tr.style.background = tr.dataset.codigo == codigo ? '#cfe2ff' : '';
+    });
+    const fila = document.querySelector(`#cuerpo-tabla tr[data-codigo="${codigo}"]`);
+    if (fila) fila.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function volarAMarcador(lat, lng) {
+    if (isNaN(lat) || isNaN(lng)) return;
+    mapa.flyTo([lat, lng], 15, { duration: 1 });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ANÁLISIS / GRÁFICOS
+// ════════════════════════════════════════════════════════════════
+function alternarAnalisis(campo) {
+    const idx = camposAnalisis.indexOf(campo);
+    const btn = document.getElementById(`btn-${CSS.escape(campo)}`);
+
+    if (idx > -1) {
+        camposAnalisis.splice(idx, 1);
+        btn.classList.remove('active');
+        btn.textContent = '📊 Analizar';
+    } else {
+        camposAnalisis.push(campo);
+        btn.classList.add('active');
+        btn.textContent = '✅ Activo';
     }
 
-    function actualizarGraficos(datos) {
-        const contenedor = document.getElementById('contenedor-graficos');
-        contenedor.innerHTML = '';
-        
-        camposAnalisisActivos.forEach(campo => {
-            const div = document.createElement('div');
-            div.className = 'chart-container';
-            div.innerHTML = `<h5 style="margin:0 0 10px 0; font-size:0.8rem; text-align:center;">${campo}</h5><canvas id="chart-${campo}"></canvas>`;
-            contenedor.appendChild(div);
+    document.getElementById('total-analisis').textContent = camposAnalisis.length;
+    document.getElementById('seccion-graficos').style.display = camposAnalisis.length ? 'block' : 'none';
+    ejecutarFiltros();
+}
 
-            const conteo = {};
-            datos.forEach(d => { const v = d[campo] || "N/A"; conteo[v] = (conteo[v] || 0) + 1; });
+function actualizarGraficos(datos) {
+    // Destruir gráficos previos
+    Object.values(objetosGraficos).forEach(g => g.destroy());
+    objetosGraficos = {};
 
-            new Chart(document.getElementById(`chart-${campo}`), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(conteo),
-                    datasets: [{ data: Object.values(conteo), backgroundColor: COLORES_PALETA }]
+    const cont = document.getElementById('contenedor-graficos');
+    cont.innerHTML = '';
+    if (!camposAnalisis.length) return;
+
+    camposAnalisis.forEach(campo => {
+        const conteo = {};
+        datos.forEach(d => {
+            const v = d[campo] || 'N/A';
+            conteo[v] = (conteo[v] || 0) + 1;
+        });
+
+        const labels = Object.keys(conteo);
+        const values = Object.values(conteo);
+        const tipo   = labels.length <= 5 ? 'doughnut' : 'bar';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'chart-wrap';
+        wrap.innerHTML = `<div class="chart-title">${campo}</div>
+                          <canvas id="chart-${campo}" height="${tipo === 'doughnut' ? 160 : 180}"></canvas>`;
+        cont.appendChild(wrap);
+
+        const ctx = document.getElementById(`chart-${campo}`);
+        objetosGraficos[campo] = new Chart(ctx, {
+            type: tipo,
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: PALETA.slice(0, labels.length),
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                indexAxis: tipo === 'bar' ? 'y' : undefined,
+                responsive: true,
+                plugins: {
+                    legend: { display: tipo === 'doughnut', position: 'bottom',
+                              labels: { font: { size: 10 }, boxWidth: 12 } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw / datos.length * 100)}%)`
+                        }
+                    }
                 },
-                options: { indexAxis: 'y', plugins: { legend: { display: false } } }
-            });
+                scales: tipo === 'bar'
+                    ? { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 9 } } } }
+                    : {}
+            }
         });
-    }
+    });
+}
 
-    function exportarCaptura() {
-        const zona = document.getElementById('captura-zona');
-        html2canvas(zona, { useCORS: true }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'Panel_Monitoreo.jpg';
-            link.href = canvas.toDataURL('image/jpeg', 0.9);
-            link.click();
-        });
-    }
+// ════════════════════════════════════════════════════════════════
+//  EXPORTAR
+// ════════════════════════════════════════════════════════════════
+function exportarCaptura() {
+    mostrarToast('Generando captura, espere…', '📷');
+    html2canvas(document.getElementById('captura-zona'), { useCORS: true, scale: 1.5 }).then(canvas => {
+        const link     = document.createElement('a');
+        link.download  = `Panel_Monitoreo_${new Date().toISOString().slice(0,10)}.jpg`;
+        link.href      = canvas.toDataURL('image/jpeg', .92);
+        link.click();
+        mostrarToast('Captura exportada correctamente', '✅');
+    });
+}
 
-    window.onload = iniciarMapa;
+function exportarExcel() {
+    if (!datosActuales.length) { mostrarToast('No hay datos para exportar', '⚠️'); return; }
+    const ws   = XLSX.utils.json_to_sheet(datosActuales);
+    const wb   = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Centros Filtrados');
+    XLSX.writeFile(wb, `Centros_${new Date().toISOString().slice(0,10)}.xlsx`);
+    mostrarToast(`${datosActuales.length} registros exportados a Excel`, '📊');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  INICIO
+// ════════════════════════════════════════════════════════════════
+window.onload = iniciarMapa;
 </script>
 </body>
 </html>
