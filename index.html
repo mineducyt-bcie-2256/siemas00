@@ -1,356 +1,304 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de Monitoreo MINEDUCYT – BCIE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Pro | MINEDUCYT – BCIE</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<style>
-/* ══════════════════════════════════════════
-   VARIABLES & RESET
-══════════════════════════════════════════ */
-:root{
-  --navy:      #0a1628;
-  --navy2:     #0f2044;
-  --blue:      #1a3a6b;
-  --accent:    #2563eb;
-  --accent2:   #3b82f6;
-  --green:     #10b981;
-  --green2:    #059669;
-  --white:     #ffffff;
-  --gray50:    #f8fafc;
-  --gray100:   #f1f5f9;
-  --gray200:   #e2e8f0;
-  --gray400:   #94a3b8;
-  --gray600:   #475569;
-  --gray800:   #1e293b;
-  --radius:    8px;
-  --tr:        all .22s ease;
-}
-*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
-html,body{ height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif; background:var(--gray100); color:var(--gray800); }
+    <style>
+        :root {
+            --primary: #0f172a; /* Navy */
+            --accent: #2563eb;  /* Blue */
+            --bg-light: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --radius: 12px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
 
-/* ══════════════════════════════════════════
-   LAYOUT
-══════════════════════════════════════════ */
-.app{ display:grid; height:100vh;
-  grid-template-rows: 60px 1fr;
-  grid-template-columns: 320px 1fr;
-  grid-template-areas:
-    "topbar topbar"
-    "sidebar main";
-}
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f8fafc; color: var(--text-main); height: 100vh; overflow: hidden; }
 
-/* ══════════════════════════════════════════
-   TOP BAR (Mejora 1 y 2)
-══════════════════════════════════════════ */
-.topbar{
-  grid-area:topbar;
-  background: var(--white);
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 24px; border-bottom:1px solid var(--gray200); z-index:1100;
-}
-.topbar-left{ display:flex; flex-direction:column; }
-.topbar-title h1{ color:var(--navy); font-size:1.1rem; font-weight:800; }
-.topbar-title p { color:var(--accent); font-size:.85rem; font-weight:600; margin-top:2px; }
+        /* --- Layout --- */
+        .app-container { display: grid; grid-template-rows: 70px 1fr; grid-template-columns: 320px 1fr; height: 100vh; }
 
-.topbar-right{ display:flex; align-items:center; gap:12px; }
-.btn-top{
-  display:flex; align-items:center; gap:6px;
-  padding:8px 16px; border-radius:6px; font-size:.75rem; font-weight:600;
-  border:none; cursor:pointer; transition:var(--tr);
-}
-.btn-export-map  { background:var(--navy); color:white; }
-.btn-export-xlsx { background:var(--gray100); color:var(--gray800); border:1px solid var(--gray200); }
-.btn-top:hover{ opacity:0.9; transform:translateY(-1px); }
+        /* --- Topbar (Mejora 2: Texto Actualizado) --- */
+        header {
+            grid-column: 1 / -1; background: var(--bg-light); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 30px; z-index: 1000;
+        }
+        .header-info h1 { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+        .header-info p { font-size: 0.85rem; color: var(--accent); font-weight: 600; }
 
-/* ══════════════════════════════════════════
-   SIDEBAR (Mejora 3, 5 y 6)
-══════════════════════════════════════════ */
-.sidebar{
-  grid-area:sidebar;
-  background: var(--white);
-  display:flex; flex-direction:column;
-  border-right:1px solid var(--gray200);
-}
+        /* --- Sidebar (Mejora 3, 5 y 6) --- */
+        aside {
+            background: var(--bg-light); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; overflow-y: auto; padding: 25px; gap: 25px;
+        }
 
-.sb-tabs{ display:flex; background:var(--gray50); border-bottom:1px solid var(--gray200); }
-.sb-tab{
-  flex:1; padding:12px; text-align:center; cursor:pointer;
-  font-size:.7rem; font-weight:700; text-transform:uppercase;
-  color:var(--gray400); transition:var(--tr);
-}
-.sb-tab.active{ color:var(--accent); border-bottom:2px solid var(--accent); background:white; }
+        /* Tarjetas Ejecutivas Modernas */
+        .stats-grid { display: grid; gap: 15px; }
+        .stat-card {
+            background: var(--bg-light); border: 1px solid var(--border); padding: 20px;
+            border-radius: var(--radius); transition: all 0.3s ease;
+        }
+        .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .stat-val { font-size: 1.8rem; font-weight: 800; color: var(--primary); display: block; }
+        .stat-lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 700; margin-top: 5px; }
 
-.sb-panel{ display:none; flex:1; overflow-y:auto; padding:20px; background: white; }
-.sb-panel.active{ display:flex; flex-direction:column; gap:18px; }
+        /* Filtros Elegantes */
+        .filter-section { display: flex; flex-direction: column; gap: 12px; }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+        .styled-select, .styled-input {
+            width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+            background: #fcfcfc; font-size: 0.85rem; color: var(--text-main); outline: none; transition: 0.2s;
+        }
+        .styled-select:focus, .styled-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
-/* Tarjetas Ejecutivas (Mejora 3) */
-.stats-stack{ display:flex; flex-direction:column; gap:12px; }
-.s-card-exec{
-  padding:16px; border-radius:var(--radius);
-  background: var(--gray50);
-  border: 1px solid var(--gray200);
-  display: flex; flex-direction: column; justify-content: center;
-}
-.s-card-exec .s-num { font-size:1.8rem; font-weight:800; color:var(--navy); line-height:1; }
-.s-card-exec .s-lbl { font-size:.7rem; text-transform:uppercase; font-weight:700; color:var(--gray600); margin-top:6px; letter-spacing:0.5px; }
+        /* --- Main Content --- */
+        main { position: relative; display: grid; grid-template-rows: 1fr 260px; overflow: hidden; }
+        #map { width: 100%; height: 100%; z-index: 1; }
 
-/* Estilos de inputs y filtros */
-.sec-label{ font-size:.65rem; font-weight:800; text-transform:uppercase; color:var(--gray400); margin-bottom:4px; }
-.search-wrap input, select.fi-select {
-  width:100%; padding:10px; border-radius:6px; border:1px solid var(--gray200); background:var(--gray50); font-size:.8rem;
-}
-.fi { margin-bottom: 12px; }
-.fi-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-.fi-head span { font-size:0.75rem; font-weight:700; color: var(--gray800); }
+        /* --- Tabla Estilo Minimalista --- */
+        .table-container { background: white; border-top: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        .table-header { padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .table-header h3 { font-size: 0.9rem; font-weight: 700; }
+        .scroll-area { overflow: auto; flex: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th { background: #f8fafc; position: sticky; top: 0; padding: 12px 20px; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; border-bottom: 1px solid var(--border); }
+        td { padding: 10px 20px; border-bottom: 1px solid #f1f5f9; color: var(--text-main); }
+        tr:hover { background-color: #f1f5ff; cursor: pointer; }
 
-/* ══════════════════════════════════════════
-   MAPA & TABLA
-══════════════════════════════════════════ */
-.main{ grid-area:main; display:grid; grid-template-rows: 1fr auto; position:relative; }
-#map{ width:100%; height:100%; z-index:1; }
+        /* --- Botones --- */
+        .btn {
+            padding: 10px 18px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
+            cursor: pointer; border: none; transition: 0.3s; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-.tabla-panel{ background:var(--white); border-top:1px solid var(--gray200); height:250px; display:flex; flex-direction:column; }
-.tabla-top{ padding:10px 20px; display:flex; align-items:center; justify-content:space-between; background:var(--gray50); border-bottom:1px solid var(--gray200); }
-.t-title { font-size: .8rem; font-weight: 700; color: var(--navy); }
+        /* --- Mejora 4: Canvas Capture --- */
+        #export-temp-title { display: none; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; background: white; padding: 10px 20px; border-radius: 8px; border: 2px solid var(--primary); text-align: center; }
 
-/* Export Canvas Styles */
-#export-container { position: absolute; left: -9999px; top: 0; background: white; padding: 20px; }
-.export-header { margin-bottom: 15px; border-bottom: 2px solid var(--navy); padding-bottom: 10px; }
-</style>
+    </style>
 </head>
 <body>
 
-<div class="app">
-  <header class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-title">
-        <h1>Monitoreo de Condiciones Ambientales y Sociales</h1>
-        <p>Programa Mi Nueva Escuela MINEDUCYT BCIE 2256</p>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <button class="btn-top btn-export-map" onclick="exportarMapaPro()">🗺️ Exportar Imagen Mapa</button>
-      <button class="btn-top btn-export-xlsx" onclick="exportarExcel()">📊 Excel</button>
-    </div>
-  </header>
-
-  <aside class="sidebar">
-    <div class="sb-tabs">
-      <div class="sb-tab active" onclick="switchTab('stats')" id="tab-stats">Resumen</div>
-      <div class="sb-tab" onclick="switchTab('filtros')" id="tab-filtros">Filtros</div>
-      <div class="sb-tab" onclick="switchTab('graficos')" id="tab-graficos">Análisis</div>
-    </div>
-
-    <div class="sb-panel active" id="panel-stats">
-      <div class="stats-stack">
-        <div class="s-card-exec">
-          <span class="s-num" id="s-total">0</span>
-          <span class="s-lbl">Total Centros Educativos</span>
+<div class="app-container">
+    <header>
+        <div class="header-info">
+            <h1>Monitoreo de Condiciones Ambientales y Sociales</h1>
+            <p>Programa Mi Nueva Escuela MINEDUCYT BCIE 2256</p>
         </div>
-        <div class="s-card-exec">
-          <span class="s-num" id="s-mapa">0</span>
-          <span class="s-lbl">Ubicaciones en Mapa</span>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" onclick="exportarExcel()">📊 Excel</button>
+            <button class="btn btn-primary" onclick="exportarMapaFinal()">🗺️ Exportar Mapa JPG</button>
         </div>
-        <div class="s-card-exec">
-          <span class="s-num" id="s-analisis">0</span>
-          <span class="s-lbl">Indicadores Activos</span>
+    </header>
+
+    <aside>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-val" id="s-total">0</span>
+                <span class="stat-lbl">Centros Totales</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="s-visibles">0</span>
+                <span class="stat-lbl">Ubicaciones en Mapa</span>
+            </div>
         </div>
-      </div>
 
-      <div style="margin-top:20px">
-        <div class="sec-label">🔎 Búsqueda Rápida</div>
-        <input type="text" id="busqueda" placeholder="Nombre o código..." oninput="debouncedFiltros()">
-      </div>
-    </div>
-
-    <div class="sb-panel" id="panel-filtros">
-      <div id="filtros-din"></div>
-      <button style="width:100%; padding:10px; cursor:pointer;" onclick="limpiarTodo()">Limpiar Filtros</button>
-    </div>
-
-    <div class="sb-panel" id="panel-graficos">
-        <div id="contenedor-graficos"></div>
-    </div>
-  </aside>
-
-  <div class="main">
-    <div id="map"></div>
-    <div class="tabla-panel">
-        <div class="tabla-top">
-            <div class="t-title">Listado de Centros <span id="t-count" style="color:var(--accent)"></span></div>
+        <div class="filter-section">
+            <div class="filter-group">
+                <label>🔍 Búsqueda Directa</label>
+                <input type="text" id="busqueda" class="styled-input" placeholder="Nombre o Código..." oninput="filtrarTodo()">
+            </div>
+            <div id="dynamic-filters">
+                </div>
+            <button class="btn btn-outline" style="justify-content: center; margin-top: 10px;" onclick="resetFiltros()">Resetear Filtros</button>
         </div>
-        <div style="overflow:auto; flex:1;">
-            <table id="tabla-datos" style="width:100%; border-collapse:collapse; font-size:0.75rem;">
-                <thead id="tabla-thead" style="background:var(--navy); color:white; position:sticky; top:0;"></thead>
-                <tbody id="tabla-body"></tbody>
-            </table>
-        </div>
-    </div>
-  </div>
-</div>
+    </aside>
 
-<div id="export-container">
-    <div class="export-header">
-        <h2 id="exp-titulo">Mapa de Monitoreo</h2>
-        <p id="exp-sub">Filtros aplicados: <span id="exp-filtros">Ninguno</span></p>
-    </div>
-    <div id="map-capture" style="width:1200px; height:800px;"></div>
+    <main>
+        <div id="map"></div>
+        <div id="export-temp-title"></div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Detalle de Centros Educativos</h3>
+                <span id="row-count" style="color: var(--accent); font-weight: 800; font-size: 0.8rem;"></span>
+            </div>
+            <div class="scroll-area">
+                <table id="main-table">
+                    <thead id="table-head"></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 </div>
 
 <script>
-// --- Configuración y Estado ---
-const ARCHIVO = "bdatos_bcie26.xlsx";
-let mapa, clusterCapa;
-let datosBrutos = [];
-let datosActuales = [];
-let filtrosActivos = {};
+    const EXCEL_PATH = "bdatos_bcie26.xlsx";
+    let fullData = [];
+    let filteredData = [];
+    let map, clusters;
+    let activeFilters = {};
 
-// --- Inicialización ---
-window.onload = () => {
-    iniciarMapa();
-    cargarDatos();
-};
+    window.onload = () => {
+        initMap();
+        loadData();
+    };
 
-function iniciarMapa() {
-    mapa = L.map('map').setView([13.794, -88.896], 9);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-    clusterCapa = L.markerClusterGroup().addTo(mapa);
-}
+    function initMap() {
+        map = L.map('map', { zoomControl: false }).setView([13.794, -88.896], 9);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        clusters = L.markerClusterGroup().addTo(map);
+    }
 
-async function cargarDatos() {
-    try {
-        const res = await fetch(ARCHIVO);
-        const buf = await res.arrayBuffer();
-        const wb = XLSX.read(buf, {type:'array'});
-        datosBrutos = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        datosActuales = [...datosBrutos];
-        
-        actualizarUI();
-        crearFiltrosDinamicos();
-    } catch (e) { console.error("Error cargando Excel", e); }
-}
-
-// --- Mejora 4: Exportación Pro ---
-async function exportarMapaPro() {
-    const btn = document.querySelector('.btn-export-map');
-    btn.innerText = "Generando...";
-    
-    // Obtener filtros actuales para el título
-    const filtrosTxt = Object.entries(filtrosActivos)
-        .filter(([k,v]) => v !== "")
-        .map(([k,v]) => `${k}: ${v}`).join(' | ') || "Todos los centros";
-
-    document.getElementById('exp-titulo').innerText = "Programa Mi Nueva Escuela MINEDUCYT BCIE 2256";
-    document.getElementById('exp-filtros').innerText = filtrosTxt;
-
-    // Usamos html2canvas sobre el contenedor del mapa directamente para evitar desplazamiento de puntos
-    const mapaElemento = document.getElementById('map');
-    
-    html2canvas(mapaElemento, {
-        useCORS: true,
-        allowTaint: true,
-        ignoreElements: (node) => node.classList.contains('leaflet-control-container')
-    }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `Mapa_MINEDUCYT_${Date.now()}.jpg`;
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
-        link.click();
-        btn.innerText = "🗺️ Exportar Imagen Mapa";
-    });
-}
-
-// --- Lógica de Filtros y UI ---
-function crearFiltrosDinamicos() {
-    const campos = ["Departamento", "Etapa", "Empresa obras"];
-    const cont = document.getElementById('filtros-din');
-    
-    campos.forEach(campo => {
-        const opciones = [...new Set(datosBrutos.map(d => d[campo]))].sort();
-        const div = document.createElement('div');
-        div.className = 'fi';
-        div.innerHTML = `
-            <div class="fi-head"><span>${campo}</span></div>
-            <select class="fi-select" onchange="filtrar('${campo}', this.value)">
-                <option value="">Ver Todos</option>
-                ${opciones.map(o => `<option value="${o}">${o}</option>`).join('')}
-            </select>
-        `;
-        cont.appendChild(div);
-    });
-}
-
-function filtrar(campo, valor) {
-    filtrosActivos[campo] = valor;
-    ejecutarFiltros();
-}
-
-function ejecutarFiltros() {
-    const busq = document.getElementById('busqueda').value.toLowerCase();
-    
-    datosActuales = datosBrutos.filter(d => {
-        const cumpleBusq = !busq || JSON.stringify(d).toLowerCase().includes(busq);
-        const cumpleFiltros = Object.entries(filtrosActivos).every(([k, v]) => !v || d[k] === v);
-        return cumpleBusq && cumpleFiltros;
-    });
-
-    actualizarUI();
-}
-
-function actualizarUI() {
-    document.getElementById('s-total').innerText = datosBrutos.length;
-    document.getElementById('s-mapa').innerText = datosActuales.length;
-    document.getElementById('t-count').innerText = `(${datosActuales.length})`;
-    
-    // Actualizar Mapa
-    clusterCapa.clearLayers();
-    datosActuales.forEach(d => {
-        if(d.Latitud && d.Longitud) {
-            L.circleMarker([d.Latitud, d.Longitud], {radius: 8, color: '#2563eb', fillOpacity: 0.8})
-             .bindPopup(`<b>${d['Centro Educativo']}</b><br>${d.Código}`)
-             .addTo(clusterCapa);
+    async function loadData() {
+        try {
+            const res = await fetch(EXCEL_PATH);
+            const arrayBuffer = await res.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer);
+            fullData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            filteredData = [...fullData];
+            
+            buildDynamicFilters();
+            renderAll();
+        } catch (e) {
+            console.error("Error al cargar datos:", e);
         }
-    });
+    }
 
-    // Actualizar Tabla
-    const tbody = document.getElementById('tabla-body');
-    tbody.innerHTML = datosActuales.slice(0, 50).map(d => `
-        <tr>
-            <td style="padding:8px; border-bottom:1px solid #eee;">${d.Código || ''}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee;">${d['Centro Educativo'] || ''}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee;">${d.Departamento || ''}</td>
-        </tr>
-    `).join('');
-}
+    // --- Generación Automática de Filtros según Base de Datos ---
+    function buildDynamicFilters() {
+        // Columnas clave que queremos como filtros (puedes añadir más si existen)
+        const filterColumns = ["Departamento", "Empresa obras", "Etapa", "Empresa supervisión", "Administrador de contrato"];
+        const container = document.getElementById('dynamic-filters');
+        
+        filterColumns.forEach(col => {
+            if (fullData[0] && fullData[0].hasOwnProperty(col)) {
+                const values = [...new Set(fullData.map(item => item[col]))].filter(Boolean).sort();
+                
+                const group = document.createElement('div');
+                group.className = 'filter-group';
+                group.style.marginBottom = '12px';
+                group.innerHTML = `
+                    <label>${col}</label>
+                    <select class="styled-select" onchange="updateFilter('${col}', this.value)">
+                        <option value="">Seleccionar todo</option>
+                        ${values.map(v => `<option value="${v}">${v}</option>`).join('')}
+                    </select>
+                `;
+                container.appendChild(group);
+            }
+        });
+    }
 
-function switchTab(id) {
-    document.querySelectorAll('.sb-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.sb-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-'+id).classList.add('active');
-    document.getElementById('panel-'+id).classList.add('active');
-}
+    function updateFilter(col, val) {
+        activeFilters[col] = val;
+        filtrarTodo();
+    }
 
-const debouncedFiltros = () => {
-    clearTimeout(window.t);
-    window.t = setTimeout(ejecutarFiltros, 300);
-};
+    function filtrarTodo() {
+        const query = document.getElementById('busqueda').value.toLowerCase();
 
-function limpiarTodo() {
-    document.querySelectorAll('select').forEach(s => s.value = "");
-    document.getElementById('busqueda').value = "";
-    filtrosActivos = {};
-    ejecutarFiltros();
-}
+        filteredData = fullData.filter(row => {
+            const matchesSearch = !query || JSON.stringify(row).toLowerCase().includes(query);
+            const matchesSelects = Object.entries(activeFilters).every(([col, val]) => {
+                return !val || String(row[col]) === val;
+            });
+            return matchesSearch && matchesSelects;
+        });
+
+        renderAll();
+    }
+
+    function renderAll() {
+        // Stats
+        document.getElementById('s-total').innerText = fullData.length;
+        document.getElementById('s-visibles').innerText = filteredData.length;
+        document.getElementById('row-count').innerText = `${filteredData.length} registros encontrados`;
+
+        // Mapa
+        clusters.clearLayers();
+        filteredData.forEach(d => {
+            if(d.Latitud && d.Longitud) {
+                const marker = L.circleMarker([d.Latitud, d.Longitud], {
+                    radius: 8, fillColor: "#2563eb", color: "#fff", weight: 2, fillOpacity: 0.9
+                }).bindPopup(`<b>${d['Centro Educativo']}</b><br>Código: ${d.Código}`);
+                clusters.addLayer(marker);
+            }
+        });
+
+        // Tabla
+        const head = document.getElementById('table-head');
+        const body = document.getElementById('table-body');
+        
+        if (filteredData.length > 0) {
+            const cols = ["Código", "Centro Educativo", "Departamento", "Etapa", "Empresa obras"];
+            head.innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
+            body.innerHTML = filteredData.slice(0, 100).map(row => `
+                <tr>${cols.map(c => `<td>${row[c] || '—'}</td>`).join('')}</tr>
+            `).join('');
+        }
+    }
+
+    // --- Mejora 4: Exportación JPG con Título Dinámico ---
+    async function exportarMapaFinal() {
+        const mapDiv = document.getElementById('map');
+        const titleOverlay = document.getElementById('export-temp-title');
+        
+        // Obtener texto de filtros activos
+        const filtrosTxt = Object.entries(activeFilters).filter(([k,v])=>v).map(([k,v])=>v).join(', ');
+        titleOverlay.innerHTML = `<h3>${document.querySelector('.header-info h1').innerText}</h3>
+                                  <p>${filtrosTxt ? 'Filtros: ' + filtrosTxt : 'Todos los registros'}</p>`;
+        titleOverlay.style.display = 'block';
+
+        // Captura
+        html2canvas(mapDiv, {
+            useCORS: true,
+            allowTaint: true,
+            onclone: (clonedDoc) => {
+                clonedDoc.getElementById('export-temp-title').style.display = 'block';
+            }
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Mapa_MiNuevaEscuela_${Date.now()}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+            titleOverlay.style.display = 'none';
+        });
+    }
+
+    function resetFiltros() {
+        document.querySelectorAll('select').forEach(s => s.value = "");
+        document.getElementById('busqueda').value = "";
+        activeFilters = {};
+        filtrarTodo();
+    }
+
+    function exportarExcel() {
+        const ws = XLSX.utils.json_to_sheet(filteredData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Datos Filtrados");
+        XLSX.writeFile(wb, "Reporte_MINEDUCYT_BCIE.xlsx");
+    }
 </script>
+
 </body>
 </html>
