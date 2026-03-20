@@ -26,10 +26,6 @@
   --accent2:   #3b82f6;
   --green:     #10b981;
   --green2:    #059669;
-  --amber:     #f59e0b;
-  --red:       #ef4444;
-  --cyan:      #06b6d4;
-  --purple:    #8b5cf6;
   --white:     #ffffff;
   --gray50:    #f8fafc;
   --gray100:   #f1f5f9;
@@ -37,949 +33,324 @@
   --gray400:   #94a3b8;
   --gray600:   #475569;
   --gray800:   #1e293b;
-  --border:    rgba(255,255,255,.08);
-  --radius:    10px;
-  --shadow:    0 4px 24px rgba(0,0,0,.18);
+  --radius:    8px;
   --tr:        all .22s ease;
 }
 *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
 html,body{ height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif; background:var(--gray100); color:var(--gray800); }
 
 /* ══════════════════════════════════════════
-   LAYOUT RAÍZ
+   LAYOUT
 ══════════════════════════════════════════ */
 .app{ display:grid; height:100vh;
-  grid-template-rows: 56px 1fr;
-  grid-template-columns: 300px 1fr;
+  grid-template-rows: 60px 1fr;
+  grid-template-columns: 320px 1fr;
   grid-template-areas:
     "topbar topbar"
     "sidebar main";
 }
 
 /* ══════════════════════════════════════════
-   TOP BAR
+   TOP BAR (Mejora 1 y 2)
 ══════════════════════════════════════════ */
 .topbar{
   grid-area:topbar;
-  background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--blue) 100%);
+  background: var(--white);
   display:flex; align-items:center; justify-content:space-between;
-  padding:0 20px 0 18px; box-shadow:0 2px 16px rgba(0,0,0,.4); z-index:1100;
+  padding:0 24px; border-bottom:1px solid var(--gray200); z-index:1100;
 }
-.topbar-left{ display:flex; align-items:center; gap:14px; }
-.logo-icon{
-  width:36px; height:36px; border-radius:9px;
-  background:linear-gradient(135deg,var(--accent),var(--cyan));
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.1rem; box-shadow:0 2px 8px rgba(37,99,235,.4); flex-shrink:0;
-}
-.topbar-title h1{ color:var(--white); font-size:.95rem; font-weight:700; line-height:1.2; }
-.topbar-title p { color:rgba(255,255,255,.55); font-size:.7rem; margin-top:1px; }
+.topbar-left{ display:flex; flex-direction:column; }
+.topbar-title h1{ color:var(--navy); font-size:1.1rem; font-weight:800; }
+.topbar-title p { color:var(--accent); font-size:.85rem; font-weight:600; margin-top:2px; }
 
-.topbar-right{ display:flex; align-items:center; gap:8px; }
-.chip-status{
-  display:flex; align-items:center; gap:6px;
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
-  border-radius:20px; padding:4px 12px; font-size:.72rem; color:rgba(255,255,255,.75);
-}
-.dot-live{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 1.8s infinite; }
-@keyframes pulse{ 0%,100%{opacity:1}50%{opacity:.45} }
-
+.topbar-right{ display:flex; align-items:center; gap:12px; }
 .btn-top{
-  display:flex; align-items:center; gap:5px;
-  padding:7px 14px; border-radius:8px; font-size:.74rem; font-weight:600;
-  border:none; cursor:pointer; transition:var(--tr); white-space:nowrap;
+  display:flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:6px; font-size:.75rem; font-weight:600;
+  border:none; cursor:pointer; transition:var(--tr);
 }
-.btn-export-map  { background:rgba(37,99,235,.25); color:var(--accent2); border:1px solid rgba(37,99,235,.35); }
-.btn-export-xlsx { background:rgba(16,185,129,.25); color:var(--green);  border:1px solid rgba(16,185,129,.35); }
-.btn-top:hover{ transform:translateY(-1px); filter:brightness(1.2); }
+.btn-export-map  { background:var(--navy); color:white; }
+.btn-export-xlsx { background:var(--gray100); color:var(--gray800); border:1px solid var(--gray200); }
+.btn-top:hover{ opacity:0.9; transform:translateY(-1px); }
 
 /* ══════════════════════════════════════════
-   SIDEBAR
+   SIDEBAR (Mejora 3, 5 y 6)
 ══════════════════════════════════════════ */
 .sidebar{
   grid-area:sidebar;
-  background:var(--navy);
+  background: var(--white);
   display:flex; flex-direction:column;
-  overflow:hidden; border-right:1px solid rgba(255,255,255,.06);
-  box-shadow:4px 0 20px rgba(0,0,0,.25);
+  border-right:1px solid var(--gray200);
 }
 
-/* ── Tabs de sidebar ── */
-.sb-tabs{ display:flex; border-bottom:1px solid rgba(255,255,255,.08); flex-shrink:0; }
+.sb-tabs{ display:flex; background:var(--gray50); border-bottom:1px solid var(--gray200); }
 .sb-tab{
-  flex:1; padding:10px 6px; text-align:center; cursor:pointer;
-  font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
-  color:rgba(255,255,255,.4); transition:var(--tr); display:flex; flex-direction:column; align-items:center; gap:3px;
+  flex:1; padding:12px; text-align:center; cursor:pointer;
+  font-size:.7rem; font-weight:700; text-transform:uppercase;
+  color:var(--gray400); transition:var(--tr);
 }
-.sb-tab .t-icon{ font-size:1rem; }
-.sb-tab:hover{ color:rgba(255,255,255,.7); background:rgba(255,255,255,.04); }
-.sb-tab.active{ color:var(--accent2); border-bottom:2px solid var(--accent2); background:rgba(37,99,235,.08); }
+.sb-tab.active{ color:var(--accent); border-bottom:2px solid var(--accent); background:white; }
 
-.sb-panel{ display:none; flex:1; overflow-y:auto; padding:14px; }
-.sb-panel.active{ display:flex; flex-direction:column; gap:10px; }
-.sb-panel::-webkit-scrollbar{ width:4px; }
-.sb-panel::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.12); border-radius:4px; }
+.sb-panel{ display:none; flex:1; overflow-y:auto; padding:20px; background: white; }
+.sb-panel.active{ display:flex; flex-direction:column; gap:18px; }
 
-/* ── Cards de stats (en sidebar) ── */
-.stats-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.s-card{
-  border-radius:var(--radius); padding:12px 10px; text-align:center;
-  cursor:default; transition:var(--tr); position:relative; overflow:hidden;
+/* Tarjetas Ejecutivas (Mejora 3) */
+.stats-stack{ display:flex; flex-direction:column; gap:12px; }
+.s-card-exec{
+  padding:16px; border-radius:var(--radius);
+  background: var(--gray50);
+  border: 1px solid var(--gray200);
+  display: flex; flex-direction: column; justify-content: center;
 }
-.s-card::before{
-  content:''; position:absolute; top:-20px; right:-20px;
-  width:60px; height:60px; border-radius:50%;
-  background:rgba(255,255,255,.06);
-}
-.s-card:hover{ transform:translateY(-2px); }
-.s-card.c1{ background:linear-gradient(135deg,#1e3a5f,#1a3a6b); border:1px solid rgba(37,99,235,.3); }
-.s-card.c2{ background:linear-gradient(135deg,#064e3b,#065f46); border:1px solid rgba(16,185,129,.3); }
-.s-card.c3{ background:linear-gradient(135deg,#451a03,#78350f); border:1px solid rgba(245,158,11,.3); }
-.s-card.c4{ background:linear-gradient(135deg,#1e1b4b,#312e81); border:1px solid rgba(139,92,246,.3); }
-.s-card .s-icon{ font-size:1.2rem; display:block; margin-bottom:4px; }
-.s-card .s-num { font-size:1.5rem; font-weight:800; color:var(--white); line-height:1; display:block; }
-.s-card .s-lbl { font-size:.6rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.55); margin-top:3px; display:block; }
+.s-card-exec .s-num { font-size:1.8rem; font-weight:800; color:var(--navy); line-height:1; }
+.s-card-exec .s-lbl { font-size:.7rem; text-transform:uppercase; font-weight:700; color:var(--gray600); margin-top:6px; letter-spacing:0.5px; }
 
-/* ── Estado de carga ── */
-.carga-bar{
-  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
-  border-radius:8px; padding:10px 12px;
-  display:flex; align-items:center; gap:8px; font-size:.75rem; color:rgba(255,255,255,.6);
+/* Estilos de inputs y filtros */
+.sec-label{ font-size:.65rem; font-weight:800; text-transform:uppercase; color:var(--gray400); margin-bottom:4px; }
+.search-wrap input, select.fi-select {
+  width:100%; padding:10px; border-radius:6px; border:1px solid var(--gray200); background:var(--gray50); font-size:.8rem;
 }
-.carga-bar.ok    { border-color:rgba(16,185,129,.3);  color:var(--green); }
-.carga-bar.error { border-color:rgba(239,68,68,.3);   color:var(--red);   }
-.mini-spin{ width:14px;height:14px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0; }
-@keyframes spin{ to{transform:rotate(360deg)} }
-
-/* ── Sección label ── */
-.sec-label{
-  font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
-  color:rgba(255,255,255,.3); padding:0 2px; display:flex; align-items:center; gap:6px;
-}
-.sec-label::after{ content:'';flex:1;height:1px;background:rgba(255,255,255,.07); }
-
-/* ── Búsqueda ── */
-.search-wrap{ position:relative; }
-.search-wrap input{
-  width:100%; padding:8px 32px 8px 32px;
-  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
-  border-radius:8px; color:var(--white); font-size:.8rem; transition:var(--tr);
-}
-.search-wrap input::placeholder{ color:rgba(255,255,255,.3); }
-.search-wrap input:focus{ outline:none; border-color:var(--accent2); background:rgba(255,255,255,.1); box-shadow:0 0 0 3px rgba(37,99,235,.2); }
-.si{ position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:.8rem;pointer-events:none; }
-.sc{ position:absolute;right:7px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.75rem;color:rgba(255,255,255,.3);padding:2px 5px;border:none;background:none;display:none; }
-.sc:hover{ color:var(--white); }
-
-/* ── Filtro item ── */
-.fi{
-  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
-  border-radius:9px; overflow:hidden; transition:var(--tr);
-}
-.fi:hover{ border-color:rgba(255,255,255,.15); }
-.fi-head{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:8px 10px;
-}
-.fi-head span{ font-size:.75rem; font-weight:600; color:rgba(255,255,255,.75); }
-.fi-body{ padding:0 10px 10px; }
-
-.btn-analizar{
-  font-size:.62rem; padding:3px 8px; border-radius:20px; cursor:pointer;
-  border:1px solid rgba(255,255,255,.2); background:transparent;
-  color:rgba(255,255,255,.5); font-weight:600; transition:var(--tr);
-}
-.btn-analizar:hover{ border-color:var(--green); color:var(--green); }
-.btn-analizar.active{ background:var(--green2); color:#fff; border-color:var(--green2); }
-
-select.fi-select{
-  width:100%; padding:6px 10px;
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);
-  border-radius:7px; color:var(--white); font-size:.78rem;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.4)'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 9px center;
-  transition:var(--tr);
-}
-select.fi-select option{ background:var(--navy2); color:#eee; }
-select.fi-select:focus{ outline:none; border-color:var(--accent2); }
-
-.btn-clear-all{
-  width:100%; padding:8px; border-radius:8px; cursor:pointer; font-size:.75rem;
-  font-weight:600; border:1px dashed rgba(239,68,68,.4);
-  background:rgba(239,68,68,.07); color:var(--red); transition:var(--tr);
-}
-.btn-clear-all:hover{ background:var(--red); color:#fff; border-style:solid; }
-
-/* ── Gráficos en sidebar ── */
-.chart-box{
-  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
-  border-radius:9px; padding:12px; border-left:3px solid var(--accent2);
-}
-.chart-box-title{ font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.6); margin-bottom:8px; }
+.fi { margin-bottom: 12px; }
+.fi-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.fi-head span { font-size:0.75rem; font-weight:700; color: var(--gray800); }
 
 /* ══════════════════════════════════════════
-   MAIN (mapa + tabla)
+   MAPA & TABLA
 ══════════════════════════════════════════ */
-.main{
-  grid-area:main;
-  display:grid;
-  grid-template-rows: 1fr auto;
-  overflow:hidden; position:relative;
-}
+.main{ grid-area:main; display:grid; grid-template-rows: 1fr auto; position:relative; }
+#map{ width:100%; height:100%; z-index:1; }
 
-/* ── Mapa ── */
-#map{ width:100%; height:100%; min-height:0; z-index:1; }
+.tabla-panel{ background:var(--white); border-top:1px solid var(--gray200); height:250px; display:flex; flex-direction:column; }
+.tabla-top{ padding:10px 20px; display:flex; align-items:center; justify-content:space-between; background:var(--gray50); border-bottom:1px solid var(--gray200); }
+.t-title { font-size: .8rem; font-weight: 700; color: var(--navy); }
 
-/* ── Panel mapa overlay (info rápida) ── */
-.map-overlay{
-  position:absolute; top:12px; left:12px; z-index:900;
-  display:flex; flex-direction:column; gap:8px; pointer-events:none;
-}
-.map-chip{
-  background:rgba(10,22,40,.82); backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.12); border-radius:8px;
-  padding:6px 12px; font-size:.72rem; color:rgba(255,255,255,.85);
-  display:flex; align-items:center; gap:6px; pointer-events:all;
-}
-.map-chip b{ color:var(--accent2); }
-
-/* ── Leyenda mapa ── */
-.mapa-leyenda{
-  background:rgba(10,22,40,.88); backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.12); border-radius:10px;
-  padding:10px 13px; font-size:.72rem; color:rgba(255,255,255,.8);
-  max-width:200px; max-height:220px; overflow-y:auto;
-}
-.mapa-leyenda h4{ font-size:.68rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.45); margin-bottom:8px; }
-.leg-item{ display:flex; align-items:center; gap:7px; margin-bottom:5px; line-height:1.2; }
-.leg-dot{ width:11px; height:11px; border-radius:50%; flex-shrink:0; }
-
-/* ══════════════════════════════════════════
-   PANEL TABLA (draggable height)
-══════════════════════════════════════════ */
-.tabla-panel{
-  background:var(--white);
-  border-top:3px solid var(--accent);
-  display:flex; flex-direction:column;
-  transition:height .25s ease;
-  height:220px; min-height:38px; max-height:420px;
-}
-.tabla-top{
-  display:flex; align-items:center; gap:10px;
-  padding:0 16px; height:38px;
-  border-bottom:1px solid var(--gray200); flex-shrink:0;
-  cursor:row-resize; user-select:none; background:var(--gray50);
-}
-.tabla-top .t-title{ font-size:.78rem; font-weight:700; color:var(--blue); display:flex; align-items:center; gap:6px; flex:1; }
-.t-badge{ background:var(--accent); color:#fff; font-size:.62rem; font-weight:700; padding:2px 9px; border-radius:20px; }
-.active-filters-chips{ display:flex; gap:5px; align-items:center; flex-wrap:nowrap; overflow:hidden; }
-.af-chip{
-  display:flex; align-items:center; gap:4px;
-  background:rgba(37,99,235,.1); border:1px solid rgba(37,99,235,.25);
-  color:var(--accent); border-radius:20px; padding:2px 9px; font-size:.63rem; font-weight:700; white-space:nowrap;
-}
-.btn-toggle-tabla{
-  padding:3px 8px; border-radius:6px; border:1px solid var(--gray200);
-  background:white; cursor:pointer; font-size:.72rem; color:var(--gray600); transition:var(--tr);
-}
-.btn-toggle-tabla:hover{ background:var(--gray100); }
-
-.tabla-scroll{ overflow-y:auto; flex:1; }
-.tabla-scroll::-webkit-scrollbar{ width:5px; }
-.tabla-scroll::-webkit-scrollbar-thumb{ background:var(--gray200); border-radius:5px; }
-
-.td-main{ width:100%; border-collapse:collapse; font-size:.76rem; }
-.td-main thead th{
-  position:sticky; top:0; z-index:5;
-  background:var(--navy); color:rgba(255,255,255,.85);
-  padding:8px 12px; text-align:left; font-size:.67rem; font-weight:700;
-  text-transform:uppercase; letter-spacing:.5px; white-space:nowrap;
-}
-.td-main thead th.dyn-col{ background:var(--blue); color:var(--accent2); border-left:2px solid var(--accent2); }
-.td-main tbody tr{ cursor:pointer; transition:background .13s; }
-.td-main tbody tr:hover{ background:#eff6ff; }
-.td-main tbody tr.selected{ background:#dbeafe; }
-.td-main td{ padding:7px 12px; border-bottom:1px solid var(--gray100); color:var(--gray800); }
-.td-main td.dyn-val{ border-left:1px solid rgba(37,99,235,.15); font-weight:600; color:var(--blue); }
-
-.pill{
-  display:inline-flex; align-items:center; padding:2px 9px;
-  border-radius:20px; font-size:.65rem; font-weight:700; white-space:nowrap;
-}
-
-/* ══════════════════════════════════════════
-   POPUP DEL MAPA
-══════════════════════════════════════════ */
-.pop-card{ min-width:230px; max-width:290px; font-family:'Segoe UI',sans-serif; }
-.pop-header{
-  background:linear-gradient(135deg,var(--navy),var(--blue));
-  margin:-14px -20px 10px; padding:12px 16px; border-radius:4px 4px 0 0;
-}
-.pop-header h3{ color:#fff; font-size:.85rem; margin:0; }
-.pop-header small{ color:rgba(255,255,255,.6); font-size:.68rem; }
-.pop-table{ width:100%; border-collapse:collapse; font-size:.73rem; max-height:180px; overflow-y:auto; display:block; }
-.pop-table tr:nth-child(even) td{ background:#f8fafc; }
-.pop-table td{ padding:4px 6px; border-bottom:1px solid #f1f5f9; }
-.pop-table td:first-child{ font-weight:600; color:#475569; width:42%; }
-.btn-gps{
-  margin-top:10px; width:100%; padding:8px; border:none; border-radius:8px;
-  background:linear-gradient(135deg,var(--green),var(--green2)); color:#fff;
-  cursor:pointer; font-weight:700; font-size:.78rem; display:flex; align-items:center; justify-content:center; gap:6px;
-  transition:var(--tr);
-}
-.btn-gps:hover{ filter:brightness(1.1); transform:translateY(-1px); }
-
-/* ══════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════ */
-#toast{
-  position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(50px);
-  background:var(--gray800); color:#fff; padding:9px 22px; border-radius:30px;
-  font-size:.78rem; opacity:0; transition:all .3s ease; z-index:9999;
-  pointer-events:none; display:flex; align-items:center; gap:7px; white-space:nowrap;
-  box-shadow:0 8px 24px rgba(0,0,0,.3);
-}
-#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-
-/* ══════════════════════════════════════════
-   POPUP LEAFLET overrides
-══════════════════════════════════════════ */
-.leaflet-popup-content-wrapper{ border-radius:12px!important; padding:0!important; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.25)!important; }
-.leaflet-popup-content{ margin:14px 20px!important; }
+/* Export Canvas Styles */
+#export-container { position: absolute; left: -9999px; top: 0; background: white; padding: 20px; }
+.export-header { margin-bottom: 15px; border-bottom: 2px solid var(--navy); padding-bottom: 10px; }
 </style>
 </head>
 <body>
 
-<div class="app" id="app-root">
-
-  <!-- ═══════════════ TOP BAR ═══════════════ -->
+<div class="app">
   <header class="topbar">
     <div class="topbar-left">
-      <div class="logo-icon">🏫</div>
       <div class="topbar-title">
-        <h1>Monitoreo y Seguimiento de Condiciones Ambientales y Sociales</h1>
-        <p>Mi Nueva Escuela — BCIE &nbsp;·&nbsp; Sistema de Gestión de Proyectos</p>
+        <h1>Monitoreo de Condiciones Ambientales y Sociales</h1>
+        <p>Programa Mi Nueva Escuela MINEDUCYT BCIE 2256</p>
       </div>
     </div>
     <div class="topbar-right">
-      <div class="chip-status">
-        <div class="dot-live"></div>
-        <span id="chip-txt">Cargando…</span>
-      </div>
-      <button class="btn-top btn-export-map"  onclick="exportarMapa()">🗺️ Exportar Mapa</button>
-      <button class="btn-top btn-export-xlsx" onclick="exportarExcel()">📊 Exportar Excel</button>
+      <button class="btn-top btn-export-map" onclick="exportarMapaPro()">🗺️ Exportar Imagen Mapa</button>
+      <button class="btn-top btn-export-xlsx" onclick="exportarExcel()">📊 Excel</button>
     </div>
   </header>
 
-  <!-- ═══════════════ SIDEBAR ═══════════════ -->
   <aside class="sidebar">
-
-    <!-- Tabs -->
     <div class="sb-tabs">
-      <div class="sb-tab active" onclick="switchTab('stats')"   id="tab-stats">
-        <span class="t-icon">📊</span>Resumen
-      </div>
-      <div class="sb-tab" onclick="switchTab('filtros')" id="tab-filtros">
-        <span class="t-icon">⚙️</span>Filtros
-      </div>
-      <div class="sb-tab" onclick="switchTab('graficos')" id="tab-graficos">
-        <span class="t-icon">📈</span>Análisis
-      </div>
+      <div class="sb-tab active" onclick="switchTab('stats')" id="tab-stats">Resumen</div>
+      <div class="sb-tab" onclick="switchTab('filtros')" id="tab-filtros">Filtros</div>
+      <div class="sb-tab" onclick="switchTab('graficos')" id="tab-graficos">Análisis</div>
     </div>
 
-    <!-- Panel: Resumen -->
     <div class="sb-panel active" id="panel-stats">
-      <div class="stats-grid">
-        <div class="s-card c1">
-          <span class="s-icon">🏫</span>
+      <div class="stats-stack">
+        <div class="s-card-exec">
           <span class="s-num" id="s-total">0</span>
-          <span class="s-lbl">Total Centros</span>
+          <span class="s-lbl">Total Centros Educativos</span>
         </div>
-        <div class="s-card c2">
-          <span class="s-icon">🔍</span>
-          <span class="s-num" id="s-filtro">0</span>
-          <span class="s-lbl">Filtrados</span>
-        </div>
-        <div class="s-card c3">
-          <span class="s-icon">📊</span>
-          <span class="s-num" id="s-analisis">0</span>
-          <span class="s-lbl">Análisis activos</span>
-        </div>
-        <div class="s-card c4">
-          <span class="s-icon">📌</span>
+        <div class="s-card-exec">
           <span class="s-num" id="s-mapa">0</span>
-          <span class="s-lbl">En mapa</span>
+          <span class="s-lbl">Ubicaciones en Mapa</span>
+        </div>
+        <div class="s-card-exec">
+          <span class="s-num" id="s-analisis">0</span>
+          <span class="s-lbl">Indicadores Activos</span>
         </div>
       </div>
 
-      <div class="carga-bar" id="carga-bar">
-        <div class="mini-spin" id="mini-spin"></div>
-        <span id="carga-msg">Sincronizando datos…</span>
-      </div>
-
-      <!-- Búsqueda rápida también en resumen -->
-      <div class="sec-label">🔎 Búsqueda rápida</div>
-      <div class="search-wrap">
-        <span class="si">🔍</span>
-        <input type="text" id="busqueda" placeholder="Código o nombre del centro…" oninput="debouncedFiltros()" autocomplete="off"/>
-        <button class="sc" id="btn-sc" onclick="limpiarBusq()">✕</button>
+      <div style="margin-top:20px">
+        <div class="sec-label">🔎 Búsqueda Rápida</div>
+        <input type="text" id="busqueda" placeholder="Nombre o código..." oninput="debouncedFiltros()">
       </div>
     </div>
 
-    <!-- Panel: Filtros -->
     <div class="sb-panel" id="panel-filtros">
-      <div class="sec-label">🔎 Búsqueda</div>
-      <div class="search-wrap">
-        <span class="si">🔍</span>
-        <input type="text" id="busqueda2" placeholder="Código o nombre del centro…" oninput="sincBusq(2)" autocomplete="off"/>
-        <button class="sc" id="btn-sc2" onclick="limpiarBusq2()">✕</button>
-      </div>
-
-      <div class="sec-label">⚙️ Filtros disponibles</div>
       <div id="filtros-din"></div>
-
-      <button class="btn-clear-all" onclick="limpiarTodo()">🗑️ Limpiar todos los filtros</button>
+      <button style="width:100%; padding:10px; cursor:pointer;" onclick="limpiarTodo()">Limpiar Filtros</button>
     </div>
 
-    <!-- Panel: Análisis / gráficos -->
     <div class="sb-panel" id="panel-graficos">
-      <div class="sec-label">📈 Gráficos activos</div>
-      <div id="contenedor-graficos">
-        <div style="color:rgba(255,255,255,.3);font-size:.78rem;text-align:center;padding:20px 0;">
-          Activa el botón <b style="color:var(--green)">📊 Analizar</b> en los filtros para ver gráficos aquí.
-        </div>
-      </div>
+        <div id="contenedor-graficos"></div>
     </div>
-
   </aside>
 
-  <!-- ═══════════════ MAIN ═══════════════ -->
   <div class="main">
-
-    <!-- Mapa -->
     <div id="map"></div>
-
-    <!-- Overlay informativo sobre el mapa -->
-    <div class="map-overlay">
-      <div class="map-chip">
-        📌 <b id="ov-count">0</b> centros visibles
-      </div>
-    </div>
-
-    <!-- Panel tabla (inferior) -->
-    <div class="tabla-panel" id="tabla-panel">
-      <div class="tabla-top" id="tabla-drag-handle">
-        <div class="t-title">
-          📋 Centros Educativos
-          <span class="t-badge" id="t-badge">0</span>
+    <div class="tabla-panel">
+        <div class="tabla-top">
+            <div class="t-title">Listado de Centros <span id="t-count" style="color:var(--accent)"></span></div>
         </div>
-        <div class="active-filters-chips" id="filter-chips"></div>
-        <button class="btn-toggle-tabla" id="btn-toggle-tb" onclick="toggleTabla()">▼</button>
-      </div>
-      <div class="tabla-scroll" id="tabla-scroll-wrap">
-        <table class="td-main">
-          <thead id="tabla-thead"></thead>
-          <tbody id="tabla-body"></tbody>
-        </table>
-      </div>
+        <div style="overflow:auto; flex:1;">
+            <table id="tabla-datos" style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead id="tabla-thead" style="background:var(--navy); color:white; position:sticky; top:0;"></thead>
+                <tbody id="tabla-body"></tbody>
+            </table>
+        </div>
     </div>
+  </div>
+</div>
 
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<div id="toast"></div>
+<div id="export-container">
+    <div class="export-header">
+        <h2 id="exp-titulo">Mapa de Monitoreo</h2>
+        <p id="exp-sub">Filtros aplicados: <span id="exp-filtros">Ninguno</span></p>
+    </div>
+    <div id="map-capture" style="width:1200px; height:800px;"></div>
+</div>
 
 <script>
-/* ═══════════════════════════════════════════════════════
-   CONSTANTES & ESTADO
-═══════════════════════════════════════════════════════ */
-const ARCHIVO   = "bdatos_bcie26.xlsx";
-const PALETA    = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6','#a855f7','#0ea5e9','#22c55e','#eab308','#fb923c','#e879f9'];
-
-const CONF_FILTROS = [
-  { label:"Departamento",           campo:"Departamento" },
-  { label:"Empresa Obras",          campo:"Empresa obras" },
-  { label:"Número de Contrato",     campo:"Número de contrato" },
-  { label:"Empresa Supervisión",    campo:"Empresa supervisión" },
-  { label:"Administrador Contrato", campo:"Administrador de contrato" },
-  { label:"Etapa",                  campo:"Etapa" },
-  { label:"Estado de PEGAS",        campo:"Estado de PEGAS" },
-  { label:"Reubicación Temporal",   campo:"Reubicación Temporal" }
-];
-
-/* Estado global */
-let mapa, clusterCapa, leyendaCtrl;
-let datosBrutos   = [];
+// --- Configuración y Estado ---
+const ARCHIVO = "bdatos_bcie26.xlsx";
+let mapa, clusterCapa;
+let datosBrutos = [];
 let datosActuales = [];
-let camposAnalisis= [];
-let graficos      = {};
-let tablaColapsada= false;
-let _dTimer       = null;
+let filtrosActivos = {};
 
-/* ═══════════════════════════════════════════════════════
-   UTILIDADES
-═══════════════════════════════════════════════════════ */
-const debouncedFiltros = () => { clearTimeout(_dTimer); _dTimer = setTimeout(ejecutarFiltros, 280); };
+// --- Inicialización ---
+window.onload = () => {
+    iniciarMapa();
+    cargarDatos();
+};
 
-function toast(msg, ico='ℹ️'){
-  const el = document.getElementById('toast');
-  el.innerHTML = `${ico} ${msg}`;
-  el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 2800);
+function iniciarMapa() {
+    mapa = L.map('map').setView([13.794, -88.896], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+    clusterCapa = L.markerClusterGroup().addTo(mapa);
 }
 
-function setEstado(tipo, msg){
-  const bar  = document.getElementById('carga-bar');
-  const spin = document.getElementById('mini-spin');
-  const txt  = document.getElementById('carga-msg');
-  const chip = document.getElementById('chip-txt');
-  bar.className = 'carga-bar ' + tipo;
-  spin.style.display = (tipo==='ok'||tipo==='error') ? 'none' : 'block';
-  txt.textContent  = msg;
-  chip.textContent = msg;
+async function cargarDatos() {
+    try {
+        const res = await fetch(ARCHIVO);
+        const buf = await res.arrayBuffer();
+        const wb = XLSX.read(buf, {type:'array'});
+        datosBrutos = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        datosActuales = [...datosBrutos];
+        
+        actualizarUI();
+        crearFiltrosDinamicos();
+    } catch (e) { console.error("Error cargando Excel", e); }
 }
 
-function pillaColor(etapa=''){
-  if(etapa.toLowerCase().includes('ejecuc')) return {bg:'#fff7ed',c:'#ea580c'};
-  if(etapa.toLowerCase().includes('final'))  return {bg:'#f0fdf4',c:'#16a34a'};
-  if(etapa.toLowerCase().includes('susp'))   return {bg:'#fef2f2',c:'#dc2626'};
-  if(etapa.toLowerCase().includes('inic'))   return {bg:'#eff6ff',c:'#2563eb'};
-  return {bg:'#f1f5f9',c:'#475569'};
+// --- Mejora 4: Exportación Pro ---
+async function exportarMapaPro() {
+    const btn = document.querySelector('.btn-export-map');
+    btn.innerText = "Generando...";
+    
+    // Obtener filtros actuales para el título
+    const filtrosTxt = Object.entries(filtrosActivos)
+        .filter(([k,v]) => v !== "")
+        .map(([k,v]) => `${k}: ${v}`).join(' | ') || "Todos los centros";
+
+    document.getElementById('exp-titulo').innerText = "Programa Mi Nueva Escuela MINEDUCYT BCIE 2256";
+    document.getElementById('exp-filtros').innerText = filtrosTxt;
+
+    // Usamos html2canvas sobre el contenedor del mapa directamente para evitar desplazamiento de puntos
+    const mapaElemento = document.getElementById('map');
+    
+    html2canvas(mapaElemento, {
+        useCORS: true,
+        allowTaint: true,
+        ignoreElements: (node) => node.classList.contains('leaflet-control-container')
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Mapa_MINEDUCYT_${Date.now()}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+        btn.innerText = "🗺️ Exportar Imagen Mapa";
+    });
 }
 
-/* ═══════════════════════════════════════════════════════
-   TABS SIDEBAR
-═══════════════════════════════════════════════════════ */
-function switchTab(id){
-  document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  document.getElementById('panel-'+id).classList.add('active');
+// --- Lógica de Filtros y UI ---
+function crearFiltrosDinamicos() {
+    const campos = ["Departamento", "Etapa", "Empresa obras"];
+    const cont = document.getElementById('filtros-din');
+    
+    campos.forEach(campo => {
+        const opciones = [...new Set(datosBrutos.map(d => d[campo]))].sort();
+        const div = document.createElement('div');
+        div.className = 'fi';
+        div.innerHTML = `
+            <div class="fi-head"><span>${campo}</span></div>
+            <select class="fi-select" onchange="filtrar('${campo}', this.value)">
+                <option value="">Ver Todos</option>
+                ${opciones.map(o => `<option value="${o}">${o}</option>`).join('')}
+            </select>
+        `;
+        cont.appendChild(div);
+    });
 }
 
-/* ═══════════════════════════════════════════════════════
-   MAPA
-═══════════════════════════════════════════════════════ */
-function iniciarMapa(){
-  const calles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19});
-  const sat    = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19});
-  const topo   = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'OpenTopoMap',maxZoom:17});
-
-  mapa = L.map('map',{center:[13.794,-88.896],zoom:9,layers:[calles],zoomControl:false});
-  L.control.zoom({position:'topright'}).addTo(mapa);
-  L.control.layers({'🗺️ Calles':calles,'🛰️ Satelital':sat,'🏔️ Topográfico':topo},{},{position:'topright'}).addTo(mapa);
-
-  // Control centrar
-  const BtnCentrar = L.Control.extend({ options:{position:'topright'},
-    onAdd(){ const d=L.DomUtil.create('div','leaflet-bar leaflet-control');
-      d.innerHTML='<a title="Centrar en datos" style="font-size:1rem;display:flex;align-items:center;justify-content:center;">🎯</a>';
-      L.DomEvent.on(d,'click',centrarMapa); return d; } });
-  new BtnCentrar().addTo(mapa);
-
-  clusterCapa = L.markerClusterGroup({maxClusterRadius:50, showCoverageOnHover:false});
-  mapa.addLayer(clusterCapa);
-  cargarDatos();
-}
-
-function centrarMapa(){
-  if(!datosActuales.length) return;
-  const coords = datosActuales.map(d=>[parseFloat(d.Latitud),parseFloat(d.Longitud)]).filter(c=>!isNaN(c[0]));
-  if(coords.length) mapa.fitBounds(L.latLngBounds(coords),{padding:[40,40]});
-  toast('Mapa centrado en los datos filtrados','🎯');
-}
-
-/* ═══════════════════════════════════════════════════════
-   CARGA DE DATOS
-═══════════════════════════════════════════════════════ */
-async function cargarDatos(){
-  setEstado('','Descargando datos…');
-  try{
-    const res = await fetch(`${ARCHIVO}?t=${Date.now()}`);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const buf  = await res.arrayBuffer();
-    const wb   = XLSX.read(new Uint8Array(buf),{type:'array'});
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    datosBrutos = rows.filter(d=>!isNaN(parseFloat(d.Latitud))&&!isNaN(parseFloat(d.Longitud)));
-    document.getElementById('s-total').textContent = datosBrutos.length;
-    setEstado('ok',`✅ ${datosBrutos.length} centros cargados`);
-    toast(`${datosBrutos.length} centros educativos cargados`,'✅');
-    crearFiltros();
+function filtrar(campo, valor) {
+    filtrosActivos[campo] = valor;
     ejecutarFiltros();
-  }catch(e){
-    setEstado('error',`❌ ${e.message}`);
-    toast('Error al cargar datos','❌');
-  }
 }
 
-/* ═══════════════════════════════════════════════════════
-   FILTROS
-═══════════════════════════════════════════════════════ */
-function crearFiltros(){
-  const cont = document.getElementById('filtros-din');
-  cont.innerHTML='';
-  CONF_FILTROS.forEach(({label,campo})=>{
-    const vals=[...new Set(datosBrutos.map(d=>d[campo]).filter(Boolean))].sort();
-    const d=document.createElement('div');
-    d.className='fi';
-    d.innerHTML=`
-      <div class="fi-head">
-        <span>${label}</span>
-        <button class="btn-analizar" id="bta-${CSS.escape(campo)}" onclick="toggleAnalisis('${campo}')">📊 Analizar</button>
-      </div>
-      <div class="fi-body">
-        <select class="fi-select" data-campo="${campo}" onchange="ejecutarFiltros()">
-          <option value="">Todos</option>
-          ${vals.map(v=>`<option value="${v}">${v}</option>`).join('')}
-        </select>
-      </div>`;
-    cont.appendChild(d);
-  });
-}
-
-function ejecutarFiltros(){
-  const busq1 = (document.getElementById('busqueda').value||'').trim().toLowerCase();
-  const busq2 = (document.getElementById('busqueda2').value||'').trim().toLowerCase();
-  const busq  = busq1||busq2;
-
-  document.getElementById('btn-sc').style.display  = busq1?'block':'none';
-  document.getElementById('btn-sc2').style.display = busq2?'block':'none';
-
-  const sels = [...document.querySelectorAll('.fi-select')];
-  datosActuales = datosBrutos.filter(d=>{
-    const mb = (d['Centro Educativo']||'').toString().toLowerCase().includes(busq)||
-               (d['Código']||'').toString().toLowerCase().includes(busq);
-    const ms = sels.every(s=>!s.value||String(d[s.dataset.campo])===s.value);
-    return mb&&ms;
-  });
-
-  document.getElementById('s-filtro').textContent  = datosActuales.length;
-  document.getElementById('s-mapa').textContent    = datosActuales.length;
-  document.getElementById('s-analisis').textContent= camposAnalisis.length;
-  document.getElementById('ov-count').textContent  = datosActuales.length;
-
-  actualizarMapa(datosActuales);
-  actualizarTabla(datosActuales);
-  actualizarGraficos(datosActuales);
-  actualizarLeyenda(datosActuales);
-  actualizarChips();
-}
-
-function sincBusq(origen){
-  const v1 = document.getElementById('busqueda');
-  const v2 = document.getElementById('busqueda2');
-  if(origen===2) v1.value=v2.value; else v2.value=v1.value;
-  debouncedFiltros();
-}
-
-function limpiarBusq(){  document.getElementById('busqueda').value='';  document.getElementById('busqueda2').value=''; ejecutarFiltros(); }
-function limpiarBusq2(){ document.getElementById('busqueda2').value=''; document.getElementById('busqueda').value='';  ejecutarFiltros(); }
-
-function limpiarTodo(){
-  document.getElementById('busqueda').value='';
-  document.getElementById('busqueda2').value='';
-  document.querySelectorAll('.fi-select').forEach(s=>s.value='');
-  ejecutarFiltros();
-  toast('Filtros limpiados','🗑️');
-}
-
-/* ═══════════════════════════════════════════════════════
-   MARCADORES EN EL MAPA
-═══════════════════════════════════════════════════════ */
-function actualizarMapa(datos){
-  clusterCapa.clearLayers();
-  const cf = camposAnalisis[camposAnalisis.length-1];
-  const cats = cf ? [...new Set(datosBrutos.map(d=>d[cf]).filter(Boolean))].sort() : [];
-
-  datos.forEach(p=>{
-    const lat=parseFloat(p.Latitud), lng=parseFloat(p.Longitud);
-    if(isNaN(lat)||isNaN(lng)) return;
-    const col = cf ? PALETA[cats.indexOf(p[cf])%PALETA.length] : PALETA[0];
-    const mk  = L.circleMarker([lat,lng],{radius:9,fillColor:col,color:'#fff',weight:1.8,fillOpacity:.92});
-
-    const filas = Object.entries(p)
-      .filter(([k])=>k!=='Latitud'&&k!=='Longitud')
-      .map(([k,v])=>`<tr><td>${k}</td><td>${v??'—'}</td></tr>`).join('');
-
-    mk.bindPopup(`
-      <div class="pop-card">
-        <div class="pop-header">
-          <h3>🏫 ${p['Centro Educativo']||'Sin nombre'}</h3>
-          <small>Cód: ${p['Código']||'—'} · ${p['Departamento']||'—'}</small>
-        </div>
-        <table class="pop-table">${filas}</table>
-        <button class="btn-gps" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}','_blank')">
-          🧭 Navegar con GPS
-        </button>
-      </div>`,{maxWidth:310});
-
-    mk.on('click',()=>resaltarFila(p['Código']));
-    clusterCapa.addLayer(mk);
-  });
-}
-
-/* ═══════════════════════════════════════════════════════
-   LEYENDA
-═══════════════════════════════════════════════════════ */
-function actualizarLeyenda(datos){
-  if(leyendaCtrl) mapa.removeControl(leyendaCtrl);
-  const cf=camposAnalisis[camposAnalisis.length-1];
-  if(!cf) return;
-  const cats=[...new Set(datos.map(d=>d[cf]).filter(Boolean))].sort();
-  const items=cats.slice(0,12).map((c,i)=>
-    `<div class="leg-item"><div class="leg-dot" style="background:${PALETA[i%PALETA.length]}"></div><span>${c}</span></div>`).join('');
-  leyendaCtrl=L.control({position:'bottomright'});
-  leyendaCtrl.onAdd=()=>{
-    const d=L.DomUtil.create('div','mapa-leyenda');
-    d.innerHTML=`<h4>${cf}</h4>${items}${cats.length>12?`<small style="color:rgba(255,255,255,.4)">+${cats.length-12} más</small>`:''}`;
-    return d;
-  };
-  leyendaCtrl.addTo(mapa);
-}
-
-/* ═══════════════════════════════════════════════════════
-   TABLA DINÁMICA
-═══════════════════════════════════════════════════════ */
-function actualizarTabla(datos){
-  // Cabecera dinámica
-  const thead = document.getElementById('tabla-thead');
-  thead.innerHTML = `<tr>
-    <th style="width:36px">#</th>
-    <th>Código</th>
-    <th>Centro Educativo</th>
-    ${camposAnalisis.map(c=>`<th class="dyn-col">📊 ${c}</th>`).join('')}
-  </tr>`;
-
-  // Filas
-  const tbody = document.getElementById('tabla-body');
-  tbody.innerHTML = datos.map((p,i)=>{
-    const ep = pillaColor(p.Etapa||'');
-    const dynCols = camposAnalisis.map(c=>`<td class="dyn-val">${p[c]??'—'}</td>`).join('');
-    return `
-    <tr data-cod="${p['Código']}"
-        onclick="volarA(${parseFloat(p.Latitud)},${parseFloat(p.Longitud)},'${p['Código']}')">
-      <td style="color:#94a3b8;font-size:.68rem;">${i+1}</td>
-      <td><b>${p['Código']||'—'}</b></td>
-      <td title="${p['Centro Educativo']||''}">${p['Centro Educativo']||'—'}</td>
-      ${dynCols}
-    </tr>`;
-  }).join('');
-
-  document.getElementById('t-badge').textContent = datos.length;
-}
-
-function resaltarFila(codigo){
-  document.querySelectorAll('#tabla-body tr').forEach(tr=>{
-    tr.classList.toggle('selected', tr.dataset.cod==codigo);
-  });
-  const f=document.querySelector(`#tabla-body tr[data-cod="${codigo}"]`);
-  if(f) f.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-function volarA(lat,lng,cod){
-  if(!isNaN(lat)&&!isNaN(lng)) mapa.flyTo([lat,lng],16,{duration:1.2});
-  resaltarFila(cod);
-}
-
-/* ═══════════════════════════════════════════════════════
-   CHIPS DE FILTROS ACTIVOS (en barra tabla)
-═══════════════════════════════════════════════════════ */
-function actualizarChips(){
-  const cont = document.getElementById('filter-chips');
-  const sels = [...document.querySelectorAll('.fi-select')].filter(s=>s.value);
-  cont.innerHTML = sels.map(s=>
-    `<div class="af-chip">⚙️ ${CONF_FILTROS.find(c=>c.campo===s.dataset.campo)?.label||s.dataset.campo}: <b>${s.value}</b></div>`
-  ).join('') + camposAnalisis.map(c=>
-    `<div class="af-chip" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--green);">📊 ${c}</div>`
-  ).join('');
-}
-
-/* ═══════════════════════════════════════════════════════
-   ANÁLISIS / GRÁFICOS
-═══════════════════════════════════════════════════════ */
-function toggleAnalisis(campo){
-  const idx=camposAnalisis.indexOf(campo);
-  const btn=document.getElementById(`bta-${CSS.escape(campo)}`);
-  if(idx>-1){
-    camposAnalisis.splice(idx,1);
-    btn.classList.remove('active');
-    btn.innerHTML='📊 Analizar';
-  } else {
-    camposAnalisis.push(campo);
-    btn.classList.add('active');
-    btn.innerHTML='✅ Activo';
-  }
-  // Cambiar a tab gráficos si se activó uno
-  if(camposAnalisis.length) switchTab('graficos');
-  ejecutarFiltros();
-}
-
-function actualizarGraficos(datos){
-  Object.values(graficos).forEach(g=>g.destroy());
-  graficos={};
-  const cont=document.getElementById('contenedor-graficos');
-  cont.innerHTML='';
-  if(!camposAnalisis.length){
-    cont.innerHTML='<div style="color:rgba(255,255,255,.3);font-size:.78rem;text-align:center;padding:20px 0;">Activa el botón <b style="color:var(--green)">📊 Analizar</b> en los filtros para ver gráficos aquí.</div>';
-    return;
-  }
-  camposAnalisis.forEach(campo=>{
-    const conteo={};
-    datos.forEach(d=>{ const v=d[campo]||'N/A'; conteo[v]=(conteo[v]||0)+1; });
-    const labels=Object.keys(conteo), values=Object.values(conteo);
-    const tipo=labels.length<=5?'doughnut':'bar';
-
-    const box=document.createElement('div');
-    box.className='chart-box';
-    box.innerHTML=`<div class="chart-box-title">${campo}</div>
-      <canvas id="ch-${campo}" height="${tipo==='doughnut'?150:170}"></canvas>`;
-    cont.appendChild(box);
-
-    graficos[campo]=new Chart(document.getElementById(`ch-${campo}`),{
-      type:tipo,
-      data:{labels,datasets:[{data:values,backgroundColor:PALETA.slice(0,labels.length),borderColor:'transparent',borderWidth:2}]},
-      options:{
-        indexAxis:tipo==='bar'?'y':undefined,responsive:true,
-        plugins:{
-          legend:{display:tipo==='doughnut',position:'bottom',labels:{color:'rgba(255,255,255,.6)',font:{size:9},boxWidth:10}},
-          tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${Math.round(c.raw/datos.length*100)}%)`}}
-        },
-        scales:tipo==='bar'?{
-          x:{ticks:{color:'rgba(255,255,255,.5)',font:{size:9}},grid:{color:'rgba(255,255,255,.06)'}},
-          y:{ticks:{color:'rgba(255,255,255,.55)',font:{size:8}},grid:{color:'rgba(255,255,255,.06)'}}
-        }:{}
-      }
+function ejecutarFiltros() {
+    const busq = document.getElementById('busqueda').value.toLowerCase();
+    
+    datosActuales = datosBrutos.filter(d => {
+        const cumpleBusq = !busq || JSON.stringify(d).toLowerCase().includes(busq);
+        const cumpleFiltros = Object.entries(filtrosActivos).every(([k, v]) => !v || d[k] === v);
+        return cumpleBusq && cumpleFiltros;
     });
-  });
+
+    actualizarUI();
 }
 
-/* ═══════════════════════════════════════════════════════
-   TOGGLE TABLA
-═══════════════════════════════════════════════════════ */
-function toggleTabla(){
-  const panel = document.getElementById('tabla-panel');
-  const btn   = document.getElementById('btn-toggle-tb');
-  tablaColapsada = !tablaColapsada;
-  panel.style.height = tablaColapsada ? '38px' : '220px';
-  btn.textContent    = tablaColapsada ? '▲' : '▼';
-}
-
-/* Drag para redimensionar tabla */
-(function(){
-  const handle = document.getElementById('tabla-drag-handle');
-  const panel  = document.getElementById('tabla-panel');
-  let drag=false, startY=0, startH=0;
-  handle.addEventListener('mousedown',e=>{
-    if(e.target.closest('button')) return;
-    drag=true; startY=e.clientY; startH=panel.offsetHeight;
-    document.body.style.userSelect='none';
-  });
-  document.addEventListener('mousemove',e=>{
-    if(!drag) return;
-    const delta = startY - e.clientY;
-    panel.style.height = Math.max(38,Math.min(420,startH+delta))+'px';
-    tablaColapsada = false;
-    document.getElementById('btn-toggle-tb').textContent='▼';
-  });
-  document.addEventListener('mouseup',()=>{ drag=false; document.body.style.userSelect=''; });
-})();
-
-/* ═══════════════════════════════════════════════════════
-   EXPORTAR — solo mapa + tabla con columnas activas
-═══════════════════════════════════════════════════════ */
-async function exportarMapa(){
-  toast('Generando imagen del mapa…','🗺️');
-
-  // 1. Captura solo el div del mapa
-  const mapEl = document.getElementById('map');
-  const canvas = await html2canvas(mapEl,{useCORS:true,scale:2,logging:false});
-
-  // 2. Tabla con columnas activas → canvas de tabla HTML
-  const colsExtra = camposAnalisis;
-  const filasCab = ['#','Código','Centro Educativo',...colsExtra];
-  const filasDat = datosActuales.map((p,i)=>[
-    i+1, p['Código']||'—', p['Centro Educativo']||'—',
-    ...colsExtra.map(c=>p[c]||'—')
-  ]);
-
-  // 3. Canvas de la tabla a mano
-  const tabCanvas = document.createElement('canvas');
-  const colW = [40,100,260,...colsExtra.map(()=>160)];
-  const totalW = colW.reduce((a,b)=>a+b,0)+20;
-  const rowH = 26, headerH = 32, padding = 10;
-  const totalH = headerH + filasDat.length*rowH + padding*2;
-  tabCanvas.width  = totalW;
-  tabCanvas.height = totalH;
-  const ctx = tabCanvas.getContext('2d');
-
-  // Fondo blanco
-  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,totalW,totalH);
-
-  // Cabecera tabla
-  ctx.fillStyle='#0a1628';
-  ctx.fillRect(0,0,totalW,headerH);
-  ctx.fillStyle='#ffffff'; ctx.font='bold 11px Segoe UI';
-  let x=padding;
-  filasCab.forEach((c,i)=>{ ctx.fillText(String(c),x+4,headerH/2+4); x+=colW[i]; });
-
-  // Filas
-  filasDat.forEach((row,ri)=>{
-    const y = headerH + ri*rowH;
-    ctx.fillStyle = ri%2===0?'#f8fafc':'#ffffff';
-    ctx.fillRect(0,y,totalW,rowH);
-    ctx.fillStyle='#1e293b'; ctx.font='10px Segoe UI';
-    let rx=padding;
-    row.forEach((v,ci)=>{
-      // Columnas dinámicas en azul
-      if(ci>2) ctx.fillStyle='#1d4ed8'; else ctx.fillStyle='#1e293b';
-      ctx.fillText(String(v).substring(0,ci===2?36:22),rx+4,y+rowH/2+4);
-      rx+=colW[ci];
+function actualizarUI() {
+    document.getElementById('s-total').innerText = datosBrutos.length;
+    document.getElementById('s-mapa').innerText = datosActuales.length;
+    document.getElementById('t-count').innerText = `(${datosActuales.length})`;
+    
+    // Actualizar Mapa
+    clusterCapa.clearLayers();
+    datosActuales.forEach(d => {
+        if(d.Latitud && d.Longitud) {
+            L.circleMarker([d.Latitud, d.Longitud], {radius: 8, color: '#2563eb', fillOpacity: 0.8})
+             .bindPopup(`<b>${d['Centro Educativo']}</b><br>${d.Código}`)
+             .addTo(clusterCapa);
+        }
     });
-    // línea separadora
-    ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=.5;
-    ctx.beginPath(); ctx.moveTo(0,y+rowH); ctx.lineTo(totalW,y+rowH); ctx.stroke();
-  });
 
-  // 4. Canvas final combinado
-  const finalCanvas = document.createElement('canvas');
-  const gap = 16;
-  finalCanvas.width  = Math.max(canvas.width, tabCanvas.width)+40;
-  finalCanvas.height = canvas.height + tabCanvas.height + gap + 40;
-  const fc = finalCanvas.getContext('2d');
-  // Fondo
-  fc.fillStyle='#f0f2f6'; fc.fillRect(0,0,finalCanvas.width,finalCanvas.height);
-  // Mapa
-  fc.drawImage(canvas,20,20);
-  // Tabla
-  fc.drawImage(tabCanvas,20,canvas.height+gap+20);
-
-  // Descargar
-  const link=document.createElement('a');
-  link.download=`Mapa_Monitoreo_${new Date().toISOString().slice(0,10)}.png`;
-  link.href=finalCanvas.toDataURL('image/png');
-  link.click();
-  toast('Exportado: mapa + tabla','✅');
+    // Actualizar Tabla
+    const tbody = document.getElementById('tabla-body');
+    tbody.innerHTML = datosActuales.slice(0, 50).map(d => `
+        <tr>
+            <td style="padding:8px; border-bottom:1px solid #eee;">${d.Código || ''}</td>
+            <td style="padding:8px; border-bottom:1px solid #eee;">${d['Centro Educativo'] || ''}</td>
+            <td style="padding:8px; border-bottom:1px solid #eee;">${d.Departamento || ''}</td>
+        </tr>
+    `).join('');
 }
 
-function exportarExcel(){
-  if(!datosActuales.length){ toast('Sin datos para exportar','⚠️'); return; }
-  const cols = ['Código','Centro Educativo',...camposAnalisis];
-  const filas = datosActuales.map(p=>{
-    const obj={};
-    cols.forEach(c=>obj[c]=p[c]??'—');
-    return obj;
-  });
-  const ws=XLSX.utils.json_to_sheet(filas);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Centros');
-  XLSX.writeFile(wb,`Centros_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast(`${datosActuales.length} registros exportados`,'📊');
+function switchTab(id) {
+    document.querySelectorAll('.sb-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sb-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');
+    document.getElementById('panel-'+id).classList.add('active');
 }
 
-/* ═══════════════════════════════════════════════════════
-   INICIO
-═══════════════════════════════════════════════════════ */
-window.onload = iniciarMapa;
+const debouncedFiltros = () => {
+    clearTimeout(window.t);
+    window.t = setTimeout(ejecutarFiltros, 300);
+};
+
+function limpiarTodo() {
+    document.querySelectorAll('select').forEach(s => s.value = "");
+    document.getElementById('busqueda').value = "";
+    filtrosActivos = {};
+    ejecutarFiltros();
+}
 </script>
 </body>
 </html>
