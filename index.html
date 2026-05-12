@@ -3,1066 +3,663 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de Monitoreo MINEDUCYT – BCIE</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<title>BCIE-26 Dashboard</title>
 <style>
-/* ══════════════════════════════════════════
-   VARIABLES & RESET
-══════════════════════════════════════════ */
-:root{
-  --navy:      #0a1628;
-  --navy2:     #0f2044;
-  --blue:      #1a3a6b;
-  --accent:    #2563eb;
-  --accent2:   #3b82f6;
-  --green:     #10b981;
-  --green2:    #059669;
-  --amber:     #f59e0b;
-  --red:       #ef4444;
-  --cyan:      #06b6d4;
-  --purple:    #8b5cf6;
-  --white:     #ffffff;
-  --gray50:    #f8fafc;
-  --gray100:   #f1f5f9;
-  --gray200:   #e2e8f0;
-  --gray400:   #94a3b8;
-  --gray600:   #475569;
-  --gray800:   #1e293b;
-  --border:    rgba(255,255,255,.08);
-  --radius:    10px;
-  --shadow:    0 4px 24px rgba(0,0,0,.18);
-  --tr:        all .22s ease;
-}
-*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
-html,body{ height:100%; overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif; background:var(--gray100); color:var(--gray800); }
-
-/* ══════════════════════════════════════════
-   LAYOUT RAÍZ
-══════════════════════════════════════════ */
-.app{ display:grid; height:100vh;
-  grid-template-rows: 56px 1fr;
-  grid-template-columns: 300px 1fr;
-  grid-template-areas:
-    "topbar topbar"
-    "sidebar main";
-}
-
-/* ══════════════════════════════════════════
-   TOP BAR
-══════════════════════════════════════════ */
-.topbar{
-  grid-area:topbar;
-  background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--blue) 100%);
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 20px 0 18px; box-shadow:0 2px 16px rgba(0,0,0,.4); z-index:1100;
-}
-.topbar-left{ display:flex; align-items:center; gap:14px; }
-.topbar-title h1{ color:var(--white); font-size:.95rem; font-weight:700; line-height:1.2; }
-.topbar-title p { color:rgba(255,255,255,.55); font-size:.7rem; margin-top:1px; }
-
-.topbar-right{ display:flex; align-items:center; gap:8px; }
-.chip-status{
-  display:flex; align-items:center; gap:6px;
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
-  border-radius:20px; padding:4px 12px; font-size:.72rem; color:rgba(255,255,255,.75);
-}
-.dot-live{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 1.8s infinite; }
-@keyframes pulse{ 0%,100%{opacity:1}50%{opacity:.45} }
-
-.btn-top{
-  display:flex; align-items:center; gap:5px;
-  padding:7px 14px; border-radius:8px; font-size:.74rem; font-weight:600;
-  border:none; cursor:pointer; transition:var(--tr); white-space:nowrap;
-}
-.btn-export-map  { background:rgba(37,99,235,.25); color:var(--accent2); border:1px solid rgba(37,99,235,.35); }
-.btn-export-xlsx { background:rgba(16,185,129,.25); color:var(--green);  border:1px solid rgba(16,185,129,.35); }
-.btn-top:hover{ transform:translateY(-1px); filter:brightness(1.2); }
-
-/* ══════════════════════════════════════════
-   SIDEBAR
-══════════════════════════════════════════ */
-.sidebar{
-  grid-area:sidebar;
-  background:#ffffff;
-  display:flex; flex-direction:column;
-  overflow:hidden; border-right:1px solid var(--gray200);
-  box-shadow:4px 0 20px rgba(0,0,0,.08);
-}
-
-/* ── Tabs de sidebar ── */
-.sb-tabs{ display:flex; border-bottom:1px solid var(--gray200); flex-shrink:0; }
-.sb-tab{
-  flex:1; padding:10px 6px; text-align:center; cursor:pointer;
-  font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
-  color:var(--gray400); transition:var(--tr); display:flex; flex-direction:column; align-items:center; gap:3px;
-}
-.sb-tab .t-icon{ font-size:1rem; }
-.sb-tab:hover{ color:var(--gray600); background:var(--gray50); }
-.sb-tab.active{ color:var(--accent); border-bottom:2px solid var(--accent); background:rgba(37,99,235,.04); }
-
-.sb-panel{ display:none; flex:1; overflow-y:auto; padding:14px; }
-.sb-panel.active{ display:flex; flex-direction:column; gap:10px; }
-.sb-panel::-webkit-scrollbar{ width:4px; }
-.sb-panel::-webkit-scrollbar-thumb{ background:var(--gray200); border-radius:4px; }
-
-/* ── Tarjetas ejecutivas (3 tarjetas, estilo blanco/limpio) ── */
-.stats-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-.s-card{
-  border-radius:8px; padding:14px 10px 12px; text-align:center;
-  background:#ffffff; border:1px solid var(--gray200);
-  box-shadow:0 1px 4px rgba(0,0,0,.06);
-  cursor:default; transition:var(--tr);
-}
-.s-card:hover{ box-shadow:0 3px 12px rgba(0,0,0,.1); transform:translateY(-1px); }
-.s-card.c1{ border-top:3px solid var(--accent); }
-.s-card.c3{ border-top:3px solid var(--amber); }
-.s-card.c4{ border-top:3px solid var(--purple); }
-.s-card .s-num { font-size:1.6rem; font-weight:800; color:var(--gray800); line-height:1; display:block; }
-.s-card .s-lbl { font-size:.58rem; text-transform:uppercase; letter-spacing:.6px; color:var(--gray400); margin-top:5px; display:block; font-weight:600; }
-
-/* ── Estado de carga ── */
-.carga-bar{
-  background:var(--gray50); border:1px solid var(--gray200);
-  border-radius:8px; padding:10px 12px;
-  display:flex; align-items:center; gap:8px; font-size:.75rem; color:var(--gray600);
-}
-.carga-bar.ok    { border-color:rgba(16,185,129,.4); color:var(--green2); background:#f0fdf4; }
-.carga-bar.error { border-color:rgba(239,68,68,.3);  color:var(--red); background:#fef2f2; }
-.mini-spin{ width:14px;height:14px;border:2px solid var(--gray200);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0; }
-@keyframes spin{ to{transform:rotate(360deg)} }
-
-/* ── Sección label ── */
-.sec-label{
-  font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
-  color:var(--gray400); padding:0 2px; display:flex; align-items:center; gap:6px;
-}
-.sec-label::after{ content:'';flex:1;height:1px;background:var(--gray200); }
-
-/* ── Búsqueda ── */
-.search-wrap{ position:relative; }
-.search-wrap input{
-  width:100%; padding:8px 32px 8px 32px;
-  background:#fff; border:1px solid var(--gray200);
-  border-radius:8px; color:var(--gray800); font-size:.8rem; transition:var(--tr);
-}
-.search-wrap input::placeholder{ color:var(--gray400); }
-.search-wrap input:focus{ outline:none; border-color:var(--accent2); background:#fff; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
-.si{ position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:.8rem;pointer-events:none; }
-.sc{ position:absolute;right:7px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.75rem;color:var(--gray400);padding:2px 5px;border:none;background:none;display:none; }
-.sc:hover{ color:var(--gray800); }
-
-/* ── Filtro item ── */
-.fi{
-  background:#fff; border:1px solid var(--gray200);
-  border-radius:9px; overflow:hidden; transition:var(--tr);
-}
-.fi:hover{ border-color:var(--gray400); }
-.fi-head{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:8px 10px;
-}
-.fi-head span{ font-size:.75rem; font-weight:600; color:var(--gray800); }
-.fi-body{ padding:0 10px 10px; }
-
-.btn-analizar{
-  font-size:.62rem; padding:3px 8px; border-radius:20px; cursor:pointer;
-  border:1px solid var(--gray200); background:transparent;
-  color:var(--gray400); font-weight:600; transition:var(--tr);
-}
-.btn-analizar:hover{ border-color:var(--green); color:var(--green); }
-.btn-analizar.active{ background:var(--green2); color:#fff; border-color:var(--green2); }
-
-select.fi-select{
-  width:100%; padding:6px 10px;
-  background:#fff; border:1px solid var(--gray200);
-  border-radius:7px; color:var(--gray800); font-size:.78rem;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(100,116,139,.5)'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 9px center;
-  transition:var(--tr);
-}
-select.fi-select option{ background:#fff; color:var(--gray800); }
-select.fi-select:focus{ outline:none; border-color:var(--accent2); }
-
-.btn-clear-all{
-  width:100%; padding:8px; border-radius:8px; cursor:pointer; font-size:.75rem;
-  font-weight:600; border:1px dashed rgba(239,68,68,.4);
-  background:rgba(239,68,68,.05); color:var(--red); transition:var(--tr);
-}
-.btn-clear-all:hover{ background:var(--red); color:#fff; border-style:solid; }
-
-/* ── Gráficos en sidebar ── */
-.chart-box{
-  background:#fff; border:1px solid var(--gray200);
-  border-radius:9px; padding:12px; border-left:3px solid var(--accent2);
-}
-.chart-box-title{ font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--gray600); margin-bottom:8px; }
-
-/* ══════════════════════════════════════════
-   MAIN (mapa + tabla)
-══════════════════════════════════════════ */
-.main{
-  grid-area:main;
-  display:grid;
-  grid-template-rows: 1fr auto;
-  overflow:hidden; position:relative;
-}
-
-/* ── Mapa ── */
-#map{ width:100%; height:100%; min-height:0; z-index:1; }
-
-/* ── Panel mapa overlay ── */
-.map-overlay{
-  position:absolute; top:12px; left:12px; z-index:900;
-  display:flex; flex-direction:column; gap:8px; pointer-events:none;
-}
-.map-chip{
-  background:rgba(10,22,40,.82); backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.12); border-radius:8px;
-  padding:6px 12px; font-size:.72rem; color:rgba(255,255,255,.85);
-  display:flex; align-items:center; gap:6px; pointer-events:all;
-}
-.map-chip b{ color:var(--accent2); }
-
-/* ── Leyenda mapa ── */
-.mapa-leyenda{
-  background:rgba(10,22,40,.88); backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.12); border-radius:10px;
-  padding:10px 13px; font-size:.72rem; color:rgba(255,255,255,.8);
-  max-width:200px; max-height:220px; overflow-y:auto;
-}
-.mapa-leyenda h4{ font-size:.68rem; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.45); margin-bottom:8px; }
-.leg-item{ display:flex; align-items:center; gap:7px; margin-bottom:5px; line-height:1.2; }
-.leg-dot{ width:11px; height:11px; border-radius:50%; flex-shrink:0; }
-
-/* ══════════════════════════════════════════
-   PANEL TABLA
-══════════════════════════════════════════ */
-.tabla-panel{
-  background:var(--white);
-  border-top:3px solid var(--accent);
-  display:flex; flex-direction:column;
-  transition:height .25s ease;
-  height:220px; min-height:38px; max-height:420px;
-}
-.tabla-top{
-  display:flex; align-items:center; gap:10px;
-  padding:0 16px; height:38px;
-  border-bottom:1px solid var(--gray200); flex-shrink:0;
-  cursor:row-resize; user-select:none; background:var(--gray50);
-}
-.tabla-top .t-title{ font-size:.78rem; font-weight:700; color:var(--blue); display:flex; align-items:center; gap:6px; flex:1; }
-.t-badge{ background:var(--accent); color:#fff; font-size:.62rem; font-weight:700; padding:2px 9px; border-radius:20px; }
-.active-filters-chips{ display:flex; gap:5px; align-items:center; flex-wrap:nowrap; overflow:hidden; }
-.af-chip{
-  display:flex; align-items:center; gap:4px;
-  background:rgba(37,99,235,.1); border:1px solid rgba(37,99,235,.25);
-  color:var(--accent); border-radius:20px; padding:2px 9px; font-size:.63rem; font-weight:700; white-space:nowrap;
-}
-.btn-toggle-tabla{
-  padding:3px 8px; border-radius:6px; border:1px solid var(--gray200);
-  background:white; cursor:pointer; font-size:.72rem; color:var(--gray600); transition:var(--tr);
-}
-.btn-toggle-tabla:hover{ background:var(--gray100); }
-
-.tabla-scroll{ overflow-y:auto; flex:1; }
-.tabla-scroll::-webkit-scrollbar{ width:5px; }
-.tabla-scroll::-webkit-scrollbar-thumb{ background:var(--gray200); border-radius:5px; }
-
-.td-main{ width:100%; border-collapse:collapse; font-size:.76rem; }
-.td-main thead th{
-  position:sticky; top:0; z-index:5;
-  background:var(--navy); color:rgba(255,255,255,.85);
-  padding:8px 12px; text-align:left; font-size:.67rem; font-weight:700;
-  text-transform:uppercase; letter-spacing:.5px; white-space:nowrap;
-}
-.td-main thead th.dyn-col{ background:var(--blue); color:var(--accent2); border-left:2px solid var(--accent2); }
-.td-main tbody tr{ cursor:pointer; transition:background .13s; }
-.td-main tbody tr:hover{ background:#eff6ff; }
-.td-main tbody tr.selected{ background:#dbeafe; }
-.td-main td{ padding:7px 12px; border-bottom:1px solid var(--gray100); color:var(--gray800); }
-.td-main td.dyn-val{ border-left:1px solid rgba(37,99,235,.15); font-weight:600; color:var(--blue); }
-
-/* ══════════════════════════════════════════
-   POPUP DEL MAPA
-══════════════════════════════════════════ */
-.pop-card{ min-width:230px; max-width:290px; font-family:'Segoe UI',sans-serif; }
-.pop-header{
-  background:linear-gradient(135deg,var(--navy),var(--blue));
-  margin:-14px -20px 10px; padding:12px 16px; border-radius:4px 4px 0 0;
-}
-.pop-header h3{ color:#fff; font-size:.85rem; margin:0; }
-.pop-header small{ color:rgba(255,255,255,.6); font-size:.68rem; }
-.pop-table{ width:100%; border-collapse:collapse; font-size:.73rem; max-height:180px; overflow-y:auto; display:block; }
-.pop-table tr:nth-child(even) td{ background:#f8fafc; }
-.pop-table td{ padding:4px 6px; border-bottom:1px solid #f1f5f9; }
-.pop-table td:first-child{ font-weight:600; color:#475569; width:42%; }
-.btn-gps{
-  margin-top:10px; width:100%; padding:8px; border:none; border-radius:8px;
-  background:linear-gradient(135deg,var(--green),var(--green2)); color:#fff;
-  cursor:pointer; font-weight:700; font-size:.78rem; display:flex; align-items:center; justify-content:center; gap:6px;
-  transition:var(--tr);
-}
-.btn-gps:hover{ filter:brightness(1.1); transform:translateY(-1px); }
-
-/* ══════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════ */
-#toast{
-  position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(50px);
-  background:var(--gray800); color:#fff; padding:9px 22px; border-radius:30px;
-  font-size:.78rem; opacity:0; transition:all .3s ease; z-index:9999;
-  pointer-events:none; display:flex; align-items:center; gap:7px; white-space:nowrap;
-  box-shadow:0 8px 24px rgba(0,0,0,.3);
-}
-#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-
-/* ══════════════════════════════════════════
-   POPUP LEAFLET overrides
-══════════════════════════════════════════ */
-.leaflet-popup-content-wrapper{ border-radius:12px!important; padding:0!important; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.25)!important; }
-.leaflet-popup-content{ margin:14px 20px!important; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#f5f5f3;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e3;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.topbrand{font-size:13px;font-weight:600;flex-shrink:0}
+.topsearch{font-size:11px;padding:5px 9px;border:1px solid #ccc;border-radius:6px;width:180px}
+.btn-reset{font-size:10px;padding:4px 10px;border:1px solid #ccc;border-radius:6px;background:transparent;color:#666;cursor:pointer}
+.btn-reset:hover{background:#f5f5f3}
+.active-filters{display:flex;flex-wrap:wrap;gap:3px;flex:1}
+.fpill{display:inline-flex;align-items:center;font-size:9px;padding:2px 7px;border-radius:10px;background:#dbeafe;color:#1d4ed8;cursor:pointer;gap:3px}
+.body{display:flex;height:calc(100vh - 44px)}
+.sidebar{width:170px;flex-shrink:0;background:#fff;border-right:1px solid #e5e5e3;display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-head{padding:10px 12px 6px;font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e5e3}
+.fi{padding:8px 10px;border-bottom:1px solid #f0f0ee}
+.fl{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.fs{font-size:10px;padding:4px 6px;border:1px solid #d1d1cf;border-radius:5px;background:#fff;color:#1a1a1a;width:100%;cursor:pointer}
+.fs.on{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
+.right{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e5e5e3}
+.tab{font-size:11px;padding:0 14px;height:36px;display:flex;align-items:center;cursor:pointer;color:#666;border:none;background:transparent;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:#1a1a1a;background:#f5f5f3}
+.tab.on{color:#1a1a1a;border-bottom:2px solid #1a1a1a;font-weight:600}
+.panels{flex:1;overflow-y:auto;background:#f5f5f3}
+.panel{display:none;padding:14px}
+.panel.on{display:block}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:7px;margin-bottom:12px}
+.mc{background:#fff;border-radius:8px;padding:9px 10px;border:1px solid #e5e5e3}
+.ml{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.mv{font-size:18px;font-weight:600;line-height:1}
+.ms{font-size:9px;color:#888;margin-top:2px}
+.vg{color:#16a34a}.vb{color:#2563eb}.va{color:#d97706}.vr{color:#dc2626}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stitle{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.bc{background:#fff;border:1px solid #e5e5e3;border-radius:8px;padding:10px;margin-bottom:10px}
+.brow{display:flex;align-items:center;gap:7px;margin-bottom:6px;font-size:10px}
+.brow:last-child{margin-bottom:0}
+.bl{width:90px;color:#888;text-align:right;font-size:9px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt{flex:1;background:#f0f0ee;border-radius:3px;height:14px;overflow:hidden}
+.bf{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:4px;font-size:9px;font-weight:600;min-width:16px}
+.f-g{background:#dcfce7;color:#16a34a}.f-b{background:#dbeafe;color:#2563eb}
+.f-a{background:#fef9c3;color:#d97706}.f-r{background:#fee2e2;color:#dc2626}
+.mapwrap{background:#fff;border:1px solid #e5e5e3;border-radius:8px;overflow:hidden;margin-bottom:8px}
+#mapsvg{width:100%;display:block}
+.mleg{display:flex;gap:8px;font-size:9px;color:#888;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:3px}
+.ld{width:7px;height:7px;border-radius:50%}
+.tblwrap{background:#fff;border:1px solid #e5e5e3;border-radius:8px;overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:6px 8px;text-align:left;font-size:9px;font-weight:600;color:#888;background:#f5f5f3;border-bottom:1px solid #e5e5e3;white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:#1a1a1a}
+td{padding:6px 8px;border-bottom:1px solid #f0f0ee;font-size:10px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f9f9f8}
+.badge{display:inline-flex;font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px;white-space:nowrap}
+.bg{background:#dcfce7;color:#16a34a}.bb{background:#dbeafe;color:#2563eb}
+.ba{background:#fef9c3;color:#d97706}.br2{background:#fee2e2;color:#dc2626}
+.bgr{background:#f0f0ee;color:#888}
+.pbar{height:3px;background:#f0f0ee;border-radius:2px;margin-top:3px;width:48px}
+.pfill{height:100%;border-radius:2px}
+.empty-row{padding:24px;text-align:center;color:#888}
+.count-row{font-size:10px;color:#888;margin-bottom:6px}
+/* Bloque tarjetas etapa */
+.etapa-block{background:#fff;border:1px solid #e5e5e3;border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.etapa-block-title{font-size:10px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid #f0f0ee}
+.etapa-cards{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}
+.ec{background:#f9f9f8;border-radius:7px;padding:12px 10px;border:1px solid #eee;text-align:center}
+.ec-label{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;line-height:1.3}
+.ec-val{font-size:26px;font-weight:700;line-height:1}
+.ec-sub{font-size:9px;color:#aaa;margin-top:3px}
+.ec-construccion .ec-val{color:#2563eb}
+.ec-finalizado   .ec-val{color:#16a34a}
+.ec-disenio      .ec-val{color:#d97706}
+.ec-licitacion   .ec-val{color:#7c3aed}
+.ec-disenio-sadj .ec-val{color:#ea580c}
+.ec-sinAdj       .ec-val{color:#dc2626}
+.ec-avance       .ec-val{color:#0891b2}
+.ec-avance{background:#f0f9ff;border-color:#bae6fd}
+.ec-total        .ec-val{color:#1a1a1a}
+.ec-total{background:#f5f5f3;border-color:#e5e5e3}
+/* Tabla distribución departamento × grupo */
+.dist-block{background:#fff;border:1px solid #e5e5e3;border-radius:8px;padding:10px 12px;margin-bottom:12px;overflow-x:auto}
+.dist-block-title{font-size:10px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid #f0f0ee}
+.dist-tbl{width:100%;border-collapse:collapse;font-size:10px}
+.dist-tbl th{padding:5px 8px;text-align:center;font-size:9px;font-weight:700;color:#888;background:#f5f5f3;border-bottom:1px solid #e5e5e3;border-right:1px solid #f0f0ee;white-space:nowrap}
+.dist-tbl th.dep-col{text-align:left;min-width:100px}
+.dist-tbl td{padding:5px 8px;text-align:center;border-bottom:1px solid #f5f5f3;border-right:1px solid #f5f5f3;color:#555}
+.dist-tbl td.dep-name{text-align:left;font-weight:600;color:#1a1a1a;white-space:nowrap}
+.dist-tbl td.total-col{font-weight:700;color:#1a1a1a;background:#f5f5f3;border-left:1px solid #e5e5e3}
+.dist-tbl tr.total-row td{font-weight:700;background:#f5f5f3;border-top:1px solid #e5e5e3;color:#1a1a1a}
+.dist-tbl td.empty-cell{color:#ccc}
+.dist-tbl tr:hover td{background:#fafaf9}
+.dist-tbl tr.total-row:hover td{background:#f5f5f3}
+/* Gráfico avance por fase */
+.av-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.av-panel{background:#f9f9f8;border-radius:7px;padding:12px 14px}
+.av-panel-title{font-size:10px;font-weight:700;color:#1a1a1a;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e5e3}
+.av-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.av-row:last-child{margin-bottom:0}
+.av-range{font-size:9px;color:#555;width:100px;flex-shrink:0;text-align:right;white-space:nowrap}
+.av-track{flex:1;height:22px;background:#f0f0ee;border-radius:5px;overflow:hidden;position:relative}
+.av-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:9px;font-weight:700;color:#fff;transition:width .3s;min-width:0;white-space:nowrap}
+.av-count{font-size:9px;font-weight:700;color:#555;width:28px;text-align:right;flex-shrink:0}
+.av-pct{font-size:9px;color:#aaa;width:30px;text-align:right;flex-shrink:0}
+.av-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;padding-top:10px;border-top:1px solid #e5e5e3}
+.av-leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:#555}
+.av-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.empresas-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.emp-block{background:#fff;border:1px solid #e5e5e3;border-radius:8px;padding:10px 12px;overflow-x:auto}
+.emp-block-title{font-size:10px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid #f0f0ee}
+.emp-tbl{width:100%;border-collapse:collapse;font-size:10px}
+.emp-tbl th{padding:5px 8px;font-size:9px;font-weight:700;color:#888;background:#f5f5f3;border-bottom:1px solid #e5e5e3;white-space:nowrap;text-align:center}
+.emp-tbl th.emp-col{text-align:left}
+.emp-tbl td{padding:5px 8px;border-bottom:1px solid #f5f5f3;text-align:center;color:#555}
+.emp-tbl td.emp-name{text-align:left;font-weight:500;color:#1a1a1a;white-space:normal;line-height:1.3}
+.emp-tbl td.emp-total{font-weight:700;color:#1a1a1a;background:#f5f5f3;border-left:1px solid #e5e5e3}
+.emp-tbl td.emp-empty{color:#ccc}
+.emp-tbl tr.emp-total-row td{font-weight:700;background:#f5f5f3;border-top:1px solid #e5e5e3;color:#1a1a1a}
+.emp-tbl tr:hover td{background:#fafaf9}
+.emp-tbl tr.emp-total-row:hover td{background:#f5f5f3}
+.tip{position:fixed;background:#fff;border:1px solid #e5e5e3;border-radius:8px;padding:9px 12px;font-size:10px;pointer-events:none;display:none;z-index:100;max-width:210px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.tip strong{display:block;margin-bottom:3px;font-size:10px;line-height:1.3}
+.tip span{display:block;color:#888;font-size:9px;margin-top:2px}
+/* Vista rápida */
+.sb-vistas{padding:10px 10px 8px;border-bottom:1px solid #e5e5e3}
+.sb-vistas-lbl{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.btn-vista{display:flex;align-items:center;justify-content:space-between;width:100%;font-size:10px;font-weight:600;padding:6px 9px;border-radius:6px;border:1px solid #d1d1cf;background:#fff;color:#444;cursor:pointer;margin-bottom:5px;text-align:left}
+.btn-vista:last-child{margin-bottom:0}
+.btn-vista:hover{background:#f5f5f3}
+.btn-vista.v-todos{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-vista.v-contrato{background:#16a34a;color:#fff;border-color:#16a34a}
+.vbadge{font-size:8px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.25);color:inherit;white-space:nowrap}
+.btn-vista:not(.v-todos):not(.v-contrato) .vbadge{background:#e5e5e3;color:#555}
 </style>
 </head>
 <body>
 
-<div class="app" id="app-root">
+<div class="topbar">
+  <span class="topbrand">◈ BCIE-26</span>
+  <input class="topsearch" id="gs" placeholder="Buscar..." oninput="render()">
+  <div class="active-filters" id="active-filters"></div>
+  <button class="btn-reset" onclick="resetAll()">Limpiar todo</button>
+</div>
 
-  <!-- ═══════════════ TOP BAR ═══════════════ -->
-  <header class="topbar">
-    <div class="topbar-left">
-      <!-- Sin logo/icono en la esquina superior izquierda -->
-      <div class="topbar-title">
-        <h1>Monitoreo y Seguimiento de Condiciones Ambientales y Sociales</h1>
-        <p>Programa Mi Nueva Escuela MINEDUCYT BCIE 2256</p>
-      </div>
+<div class="body">
+  <div class="sidebar">
+    <div class="sb-vistas">
+      <div class="sb-vistas-lbl">Vista rápida</div>
+      <button class="btn-vista v-todos" id="btn-todos" onclick="setVista('todos')">
+        Mostrar todos <span class="vbadge" id="badge-todos">115</span>
+      </button>
+      <button class="btn-vista" id="btn-contrato" onclick="setVista('contrato')">
+        Con contrato <span class="vbadge" id="badge-contrato">—</span>
+      </button>
     </div>
-    <div class="topbar-right">
-      <div class="chip-status">
-        <div class="dot-live"></div>
-        <span id="chip-txt">Cargando…</span>
-      </div>
-      <button class="btn-top btn-export-map"  onclick="exportarMapa()">🗺️ Exportar Mapa JPG</button>
-      <button class="btn-top btn-export-xlsx" onclick="exportarExcel()">📊 Exportar Excel</button>
+    <div class="sidebar-head">Filtros</div>
+    <div id="filters-panel"></div>
+  </div>
+  <div class="right">
+    <div class="tabs">
+      <button class="tab on" onclick="sw('dash',this)">Dashboard</button>
+      <button class="tab" onclick="sw('pegas',this)">PEGAS</button>
+      <button class="tab" onclick="sw('mapa',this)">Mapa SIG</button>
+      <button class="tab" onclick="sw('tabla',this)">Tabla completa</button>
     </div>
-  </header>
+    <div class="panels">
 
-  <!-- ═══════════════ SIDEBAR ═══════════════ -->
-  <aside class="sidebar">
-
-    <!-- Tabs -->
-    <div class="sb-tabs">
-      <div class="sb-tab active" onclick="switchTab('stats')"   id="tab-stats">
-        <span class="t-icon">📊</span>Resumen
-      </div>
-      <div class="sb-tab" onclick="switchTab('filtros')" id="tab-filtros">
-        <span class="t-icon">⚙️</span>Filtros
-      </div>
-      <div class="sb-tab" onclick="switchTab('graficos')" id="tab-graficos">
-        <span class="t-icon">📈</span>Análisis
-      </div>
-    </div>
-
-    <!-- Panel: Resumen -->
-    <div class="sb-panel active" id="panel-stats">
-
-      <!-- 3 tarjetas ejecutivas: Total Centros | Análisis activos | En mapa -->
-      <div class="stats-grid">
-        <div class="s-card c1">
-          <span class="s-num" id="s-total">0</span>
-          <span class="s-lbl">Total Centros</span>
+      <div class="panel on" id="panel-dash">
+        <div class="etapa-block">
+          <div class="etapa-block-title">Estado de proyectos según etapa de ejecución</div>
+          <div class="etapa-cards" id="etapa-cards"></div>
         </div>
-        <div class="s-card c3">
-          <span class="s-num" id="s-analisis">0</span>
-          <span class="s-lbl">Análisis activos</span>
+        <div class="dist-block">
+          <div class="dist-block-title">Distribución de centros educativos por departamento</div>
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start">
+            <div id="dist-tabla"></div>
+            <div style="width:100%">
+              <div class="stitle" style="margin-bottom:6px">Departamento</div>
+              <div class="bc" id="ch-depto" style="margin-bottom:0"></div>
+            </div>
+          </div>
         </div>
-        <div class="s-card c4">
-          <span class="s-num" id="s-mapa">0</span>
-          <span class="s-lbl">En mapa</span>
+        <div class="empresas-row">
+          <div class="emp-block">
+            <div class="emp-block-title">Empresas adjudicadas a las obras</div>
+            <div id="emp-obras-tabla"></div>
+          </div>
+          <div class="emp-block">
+            <div class="emp-block-title">Empresas adjudicadas a la supervisión</div>
+            <div id="emp-sup-tabla"></div>
+          </div>
         </div>
-      </div>
-
-      <div class="carga-bar" id="carga-bar">
-        <div class="mini-spin" id="mini-spin"></div>
-        <span id="carga-msg">Sincronizando datos…</span>
-      </div>
-
-      <!-- Búsqueda rápida en resumen -->
-      <div class="sec-label">🔎 Búsqueda rápida</div>
-      <div class="search-wrap">
-        <span class="si">🔍</span>
-        <input type="text" id="busqueda" placeholder="Código o nombre del centro…" oninput="debouncedFiltros()" autocomplete="off"/>
-        <button class="sc" id="btn-sc" onclick="limpiarBusq()">✕</button>
-      </div>
-    </div>
-
-    <!-- Panel: Filtros -->
-    <div class="sb-panel" id="panel-filtros">
-      <div class="sec-label">🔎 Búsqueda</div>
-      <div class="search-wrap">
-        <span class="si">🔍</span>
-        <input type="text" id="busqueda2" placeholder="Código o nombre del centro…" oninput="sincBusq(2)" autocomplete="off"/>
-        <button class="sc" id="btn-sc2" onclick="limpiarBusq2()">✕</button>
-      </div>
-
-      <div class="sec-label">⚙️ Filtros disponibles</div>
-      <div id="filtros-din"></div>
-
-      <button class="btn-clear-all" onclick="limpiarTodo()">🗑️ Limpiar todos los filtros</button>
-    </div>
-
-    <!-- Panel: Análisis / gráficos -->
-    <div class="sb-panel" id="panel-graficos">
-      <div class="sec-label">📈 Gráficos activos</div>
-      <div id="contenedor-graficos">
-        <div style="color:var(--gray400);font-size:.78rem;text-align:center;padding:20px 0;">
-          Activa el botón <b style="color:var(--green)">📊 Analizar</b> en los filtros para ver gráficos aquí.
+        <!-- Gráfico avance por fase -->
+        <div class="dist-block" style="margin-bottom:12px">
+          <div class="dist-block-title">Porcentaje de avance — Construcción vs Diseño de Carpeta</div>
+          <div id="avance-chart"></div>
+        </div>
+        <div class="twocol">
+          <div>
+            <div class="stitle">Estado PEGAS</div>
+            <div class="bc" id="ch-pegas"></div>
+            <div class="stitle">Etapa constructiva</div>
+            <div class="bc" id="ch-etapa"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-  </aside>
-
-  <!-- ═══════════════ MAIN ═══════════════ -->
-  <div class="main">
-
-    <!-- Mapa -->
-    <div id="map"></div>
-
-    <!-- Overlay informativo sobre el mapa -->
-    <div class="map-overlay">
-      <div class="map-chip">
-        📌 <b id="ov-count">0</b> centros visibles
-      </div>
-    </div>
-
-    <!-- Panel tabla (inferior) -->
-    <div class="tabla-panel" id="tabla-panel">
-      <div class="tabla-top" id="tabla-drag-handle">
-        <div class="t-title">
-          📋 Centros Educativos
-          <span class="t-badge" id="t-badge">0</span>
+      <div class="panel" id="panel-pegas">
+        <div class="etapa-block" style="margin-bottom:12px">
+          <div class="etapa-block-title">Estado de PEGAS</div>
+          <div class="etapa-cards" id="pegas-cards" style="grid-template-columns:repeat(7,1fr)"></div>
         </div>
-        <div class="active-filters-chips" id="filter-chips"></div>
-        <button class="btn-toggle-tabla" id="btn-toggle-tb" onclick="toggleTabla()">▼</button>
+        <div class="metrics" id="pegas-metrics"></div>
+        <div class="twocol" style="margin-bottom:10px">
+          <div>
+            <div class="stitle">Estado PEGAS</div>
+            <div class="bc" id="pch-estado"></div>
+          </div>
+          <div>
+            <div class="stitle">Reubicación temporal</div>
+            <div class="bc" id="pch-reubicacion"></div>
+          </div>
+        </div>
+        <div class="stitle">Detalle de PEGAS</div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr>
+              <th>Grp</th><th>Código</th><th style="min-width:170px">Centro educativo</th>
+              <th style="min-width:85px">Departamento</th><th style="min-width:100px">Empresa obras</th>
+              <th style="min-width:95px">Administrador</th><th style="min-width:100px">Etapa</th>
+              <th style="min-width:65px">Avance</th><th style="min-width:110px">Estado PEGAS</th>
+              <th style="min-width:110px">Reubicación</th><th style="min-width:145px">Resolución ambiental</th>
+              <th style="min-width:75px">Fecha RA</th>
+            </tr></thead>
+            <tbody id="pegas-body"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="tabla-scroll" id="tabla-scroll-wrap">
-        <table class="td-main">
-          <thead id="tabla-thead"></thead>
-          <tbody id="tabla-body"></tbody>
-        </table>
+
+      <div class="panel" id="panel-mapa">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:10px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.4px;">Colorear por:</span>
+          <select id="mapa-indicador" onchange="renderMap(window._lastMapRows||filtered())" style="font-size:11px;padding:5px 9px;border:1px solid #d1d1cf;border-radius:6px;background:#fff;color:#1a1a1a;cursor:pointer;font-weight:500">
+            <option value="estado_pegas">Estado PEGAS</option>
+            <option value="depto">Departamento</option>
+            <option value="distrito">Distrito</option>
+            <option value="empresa_obras">Empresa obras</option>
+            <option value="contrato">Contrato</option>
+            <option value="empresa_sup">Empresa supervisión</option>
+            <option value="admin">Administrador de contrato</option>
+            <option value="etapa">Etapa</option>
+            <option value="reubicacion">Reubicación temporal</option>
+          </select>
+        </div>
+        <div id="mapa-leaflet" style="height:calc(100vh - 180px);border-radius:8px;overflow:hidden;"></div>
+        <div class="mleg" id="mapa-leyenda" style="margin-top:8px;flex-wrap:wrap;gap:6px 12px;"></div>
       </div>
+
+      <div class="panel" id="panel-tabla">
+        <div class="count-row">Mostrando <strong id="tcount">—</strong> registros</div>
+        <div class="tblwrap">
+          <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+        </div>
+      </div>
+
     </div>
-
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<div id="toast"></div>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════
-   CONSTANTES & ESTADO
-═══════════════════════════════════════════════════════ */
-const ARCHIVO   = "bdatos_bcie26.xlsx";
-const PALETA    = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6','#a855f7','#0ea5e9','#22c55e','#eab308','#fb923c','#e879f9'];
-
-const CONF_FILTROS = [
-  { label:"Departamento",           campo:"Departamento" },
-  { label:"Empresa Obras",          campo:"Empresa obras" },
-  { label:"Número de Contrato",     campo:"Número de contrato" },
-  { label:"Empresa Supervisión",    campo:"Empresa supervisión" },
-  { label:"Administrador Contrato", campo:"Administrador de contrato" },
-  { label:"Etapa",                  campo:"Etapa" },
-  { label:"Estado de PEGAS",        campo:"Estado de PEGAS" },
-  { label:"Reubicación Temporal",   campo:"Reubicación Temporal" }
+const FILTER_COLS=[
+  {key:'grupo',label:'Grupo'},{key:'depto',label:'Departamento'},{key:'distrito',label:'Distrito'},
+  {key:'empresa_obras',label:'Empresa obras'},{key:'empresa_sup',label:'Empresa sup.'},
+  {key:'admin',label:'Administrador'},{key:'etapa',label:'Etapa'},
+  {key:'estado_pegas',label:'Estado PEGAS'},{key:'reubicacion',label:'Reubicación'},
+];
+const TABLE_COLS=[
+  {k:'grupo',l:'Grp',w:35},{k:'codigo',l:'Código',w:58},{k:'centro',l:'Centro educativo',w:170},
+  {k:'depto',l:'Depto.',w:85},{k:'distrito',l:'Distrito',w:85},{k:'empresa_obras',l:'Empresa obras',w:110},
+  {k:'admin',l:'Administrador',w:100},{k:'etapa',l:'Etapa',w:105},{k:'avance',l:'Avance',w:65},
+  {k:'estado_pegas',l:'Estado PEGAS',w:110},{k:'reubicacion',l:'Reubicación',w:110},
+  {k:'ra',l:'Res. ambiental',w:140},{k:'fecha_ra',l:'Fecha RA',w:72},
 ];
 
-/* Estado global */
-let mapa, clusterCapa, leyendaCtrl;
-let datosBrutos   = [];
-let datosActuales = [];
-let camposAnalisis= [];
-let graficos      = {};
-let tablaColapsada= false;
-let _dTimer       = null;
+const DATA=[{"lat": 13.72491667, "lon": -89.66127778, "grupo": 1, "no": "1", "codigo": "10588", "centro": "COMPLEJO EDUCATIVO \"REPÚBLICA DE CHINA\"", "depto": "SONSONATE", "distrito": "CALUCO", "empresa_obras": "O.S. CONSTRUCTORES, S.A. DE C.V.", "contrato": "14/2023", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-Corr836-2024-92-2024", "fecha_ra": "08/04/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.64277778, "lon": -89.59613889, "grupo": 1, "no": "2", "codigo": "10596", "centro": "COMPLEJO EDUCATIVO “CRISTÓBAL IBARRA MEJICANOS\"", "depto": "SONSONATE", "distrito": "CUISNAHUAT", "empresa_obras": "O.S. CONSTRUCTORES, S.A. DE C.V.", "contrato": "14/2023", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-Corr836-2024-92-2024", "fecha_ra": "08/04/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.38016667, "lon": -88.35333333, "grupo": 1, "no": "3", "codigo": "13107", "centro": "CENTRO ESCOLAR \"PROFESOR JOSÉ OSCAR RIVERA QUINTANILLA\"", "depto": "SAN MIGUEL", "distrito": "SAN RAFAEL ORIENTE", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "15/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1223-2024-726-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.55613889, "lon": -88.34577778, "grupo": 1, "no": "4", "codigo": "12904", "centro": "CENTRO ESCOLAR \"INGENIERO ANTONIO MEJÍA\"", "depto": "SAN MIGUEL", "distrito": "LOLOTIQUE", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "15/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1223-2024-726-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.57877778, "lon": -88.28813889, "grupo": 1, "no": "5", "codigo": "12920", "centro": "CENTRO ESCOLAR \"SARA POHL DE BORGONOVO\"", "depto": "SAN MIGUEL", "distrito": "MONCAGUA", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "15/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1223-2024-726-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.53391667, "lon": -88.34863889, "grupo": 1, "no": "6", "codigo": "12933", "centro": "CENTRO ESCOLAR \"ERNESTO LIEBES\"", "depto": "SAN MIGUEL", "distrito": "NUEVA GUADALUPE", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "15/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1223-2024-726-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.81527778, "lon": -88.20833333, "grupo": 1, "no": "7", "codigo": "13192", "centro": "CENTRO ESCOLAR \"JOSÉ MATÍAS DELGADO\"", "depto": "MORAZÁN", "distrito": "GUALOCOCTI", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "15/2023", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE Pendiente", "ra": "MARN-DEC-GEA-CIC-1223-2024-726-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.50191667, "lon": -88.89747222, "grupo": 1, "no": "8", "codigo": "11972", "centro": "CENTRO ESCOLAR \"PROFESOR FELIPE HUEZO CORDOVA\"", "depto": "LA PAZ", "distrito": "SAN JUAN NONUALCO", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "15/2023", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1223-2024-726-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.74027778, "lon": -89.715, "grupo": 1, "no": "9", "codigo": "10092", "centro": "CENTRO ESCOLAR “EL SAUCE”", "depto": "SONSONATE", "distrito": "SONZACATE", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "15/2023", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1223-2024-726-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.97991667, "lon": -89.56422222, "grupo": 1, "no": "10", "codigo": "10399", "centro": "CENTRO ESCOLAR \"INSA\"", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "MC CONSTRUCTORES S.A. DE C.V.", "contrato": "16/2023", "empresa_sup": "MONFLO INGENIEROS, S.A. DE C.V.", "admin": "Raquel Carballo", "etapa": "Construcción", "avance": 0.64, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-NFA1623-2024-293-2025", "fecha_ra": "10/02/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.74747222, "lon": -89.49638889, "grupo": 1, "no": "11", "codigo": "10572", "centro": "CENTRO ESCOLAR \"DE ARMENIA \"", "depto": "SONSONATE", "distrito": "ARMENIA", "empresa_obras": "MC CONSTRUCTORES S.A. DE C.V.", "contrato": "16/2023", "empresa_sup": "MONFLO INGENIEROS, S.A. DE C.V.", "admin": "Raquel Carballo", "etapa": "Construcción", "avance": 0.87, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr2586-2024-1193-2024", "fecha_ra": "01/07/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.71377778, "lon": -89.73105556, "grupo": 1, "no": "12", "codigo": "10730", "centro": "CENTRO ESCOLAR \"COLONIA SENSUNAPÁN\"", "depto": "SONSONATE", "distrito": "SONSONATE", "empresa_obras": "MC CONSTRUCTORES S.A. DE C.V.", "contrato": "16/2023", "empresa_sup": "MONFLO INGENIEROS, S.A. DE C.V.", "admin": "Raquel Carballo", "etapa": "Construcción", "avance": 0.86, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr2586-2024-1193-2024", "fecha_ra": "01/07/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.63833333, "lon": -88.96, "grupo": 1, "no": "13", "codigo": "11945", "centro": "COMPLEJO EDUCATIVO \"GENERAL RAFAEL OSORIO HIJO\"", "depto": "LA PAZ", "distrito": "PARAISO DE OSORIO", "empresa_obras": "MC CONSTRUCTORES S.A. DE C.V.", "contrato": "16/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Raquel Carballo", "etapa": "Construcción", "avance": 0.67, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr2583-2024-1192-2024", "fecha_ra": "01/07/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.51213889, "lon": -88.93975, "grupo": 1, "no": "14", "codigo": "12071", "centro": "CENTRO ESCOLAR \"CUSCATLÁN\"", "depto": "LA PAZ", "distrito": "SANTIAGO NONUALCO", "empresa_obras": "MC CONSTRUCTORES S.A. DE C.V.", "contrato": "16/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Raquel Carballo", "etapa": "Construcción", "avance": 0.67, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr2583-2024-1192-2024", "fecha_ra": "01/07/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.64955556, "lon": -88.97397222, "grupo": 1, "no": "15", "codigo": "11951", "centro": "CENTRO ESCOLAR \"PROFESOR FRANCISCO ADOLFO BLANDÓN\"", "depto": "LA PAZ", "distrito": "SAN EMIGDIO", "empresa_obras": "EDIFICA, B&B, S.A. DE C.V.", "contrato": "19/2023", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1222-2024-727-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.50230556, "lon": -88.92358333, "grupo": 1, "no": "16", "codigo": "12033", "centro": "CENTRO ESCOLAR \"PROFESOR RAFAEL OSORIO HIJO\"", "depto": "LA PAZ", "distrito": "SAN RAFAEL OBRAJUELO", "empresa_obras": "EDIFICA, B&B, S.A. DE C.V.", "contrato": "19/2023", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Finalizado", "etapa": "Contructivo finalizado", "avance": 1.0, "estado_pegas": "Implementado", "reubicacion": "Finalizado - CE en uso", "ra": "MARN-DEC-GEA-CIC-1222-2024-727-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.79519444, "lon": -87.71211111, "grupo": 1, "no": "17", "codigo": "13352", "centro": "COMPLEJO EDUCATIVO PROFESOR VIDAL UMANZOR", "depto": "LA UNIÓN", "distrito": "CONCEPCION DE ORIENTE", "empresa_obras": "EDIFICA, B&B, S.A. DE C.V.", "contrato": "19/2023", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Maria Delia Ramirez", "etapa": "Construcción", "avance": 0.9985, "estado_pegas": "Ejecución", "reubicacion": "Multimodal", "ra": "MARN-DEC-GEA-CIC-1222-2024-727-2024", "fecha_ra": "30/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.43172222, "lon": -87.96163889, "grupo": 1, "no": "18", "codigo": "13545", "centro": "CENTRO ESCOLAR \" REPUBLICA DE ARGENTINA \"", "depto": "LA UNIÓN", "distrito": "SAN ALEJO", "empresa_obras": "D´S INVERSIONES, S.A. DE C.V.", "contrato": "25/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Rosario Flores", "etapa": "Construcción", "avance": 0.6132, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-CIC-2582-2024-1210-2024", "fecha_ra": "26/06/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.58569444, "lon": -87.84055556, "grupo": 1, "no": "19", "codigo": "13501", "centro": "CENTRO ESCOLAR \"RAMON MENDOZA\"", "depto": "LA UNIÓN", "distrito": "PASAQUINA", "empresa_obras": "D´S INVERSIONES, S.A. DE C.V.", "contrato": "25/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Rosario Flores", "etapa": "Construcción", "avance": 0.5455, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-CIC-2582-2024-1210-2024", "fecha_ra": "26/06/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.33808333, "lon": -87.84166667, "grupo": 1, "no": "20", "codigo": "13444", "centro": "CENTRO ESCOLAR \"VICTORIA ZELAYA\"", "depto": "LA UNIÓN", "distrito": "LA UNION", "empresa_obras": "D´S INVERSIONES, S.A. DE C.V.", "contrato": "25/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Rosario Flores", "etapa": "Construcción", "avance": 0.5428, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-CIC-2582-2024-1210-2024", "fecha_ra": "26/06/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.57383333, "lon": -88.36263889, "grupo": 1, "no": "21", "codigo": "12905", "centro": "CENTRO ESCOLAR \"CANTÓN EL PALÓN\"", "depto": "SAN MIGUEL", "distrito": "LOLOTIQUE", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "26/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Rosario Flores", "etapa": "Construcción", "avance": 0.77, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr1953-2024-916-2024", "fecha_ra": "22/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.45472222, "lon": -88.14725, "grupo": 1, "no": "22", "codigo": "13021", "centro": "CENTRO ESCOLAR \"COLONIA CARRILLO, CANTÓN EL PAPALÓN\"", "depto": "SAN MIGUEL", "distrito": "SAN MIGUEL", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "26/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Rosario Flores", "etapa": "Construcción", "avance": 0.785, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr1953-2024-916-2024", "fecha_ra": "22/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.49661111, "lon": -88.18125, "grupo": 1, "no": "23", "codigo": "13001", "centro": "CENTRO ESCOLAR \"COLONIA SAN FRANCISCO\"", "depto": "SAN MIGUEL", "distrito": "SAN MIGUEL", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "26/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Rosario Flores", "etapa": "Construcción", "avance": 0.705, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr1953-2024-916-2024", "fecha_ra": "22/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.17413889, "lon": -88.10647222, "grupo": 1, "no": "24", "codigo": "12873", "centro": "COMPLEJO EDUCATIVO \"CHARLAIX\"", "depto": "SAN MIGUEL", "distrito": "CHIRILAGUA", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "26/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Rosario Flores", "etapa": "Construcción", "avance": 0.68, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr1953-2024-916-2024", "fecha_ra": "22/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.72638889, "lon": -89.35361111, "grupo": 1, "no": "25", "codigo": "11039", "centro": "CENTRO ESCOLAR \"COLONIA LAS MORITAS, CANTÓN LAS MORAS\"", "depto": "LA LIBERTAD", "distrito": "COLON", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "26/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Maria Delia Ramirez", "etapa": "Construcción", "avance": 0.827, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr1953-2024-916-2024", "fecha_ra": "22/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.83333333, "lon": -89.44527778, "grupo": 1, "no": "26", "codigo": "11018", "centro": "CENTRO ESCOLAR \"DE CIUDAD ARCE\"", "depto": "LA LIBERTAD", "distrito": "CIUDAD ARCE", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "26/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Maria Delia Ramirez", "etapa": "Construcción", "avance": 0.658, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr1953-2024-916-2024", "fecha_ra": "22/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.74972222, "lon": -89.40916667, "grupo": 1, "no": "27", "codigo": "11033", "centro": "CENTRO ESCOLAR \"LICENCIADO HECTOR MAURICIO PALOMO SOL\"", "depto": "LA LIBERTAD", "distrito": "COLON", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "26/2023", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Maria Delia Ramirez", "etapa": "Construcción", "avance": 0.645, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr1953-2024-916-2024", "fecha_ra": "22/05/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.47197222, "lon": -88.18041667, "grupo": 2, "no": "1", "codigo": "12979", "centro": "INSTITUTO NACIONAL ISIDRO MENÉNDEZ", "depto": "SAN MIGUEL", "distrito": "SAN MIGUEL", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "13/2024", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Oscar Sandoval", "etapa": "Construcción", "avance": 0.43, "estado_pegas": "Ejecución", "reubicacion": "Multimodal", "ra": "MARN-DEC-GEA-Corr5247-2024-2524-2024", "fecha_ra": "09/12/2024", "monto": 0, "monto_pegas": 0}, {"lat": 14.17305556, "lon": -89.105, "grupo": 3, "no": "1", "codigo": "10994", "centro": "CENTRO ESCOLAR \"PONCIANA RAMIREZ\"", "depto": "CHALATENANGO", "distrito": "TEJUTLA", "empresa_obras": "AVM INGENIEROS S.A DE C.V.", "contrato": "2025-01-01 00:00:00", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Oscar Sandoval", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Gestion de continuidad educativa", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.99994444, "lon": -89.54372222, "grupo": 3, "no": "2", "codigo": "10408", "centro": "COMPLEJO EDUCATIVO \"PROFESOR JOSÉ ARNOLDO SERMEÑO\"", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "AVM INGENIEROS S.A DE C.V.", "contrato": "2025-01-01 00:00:00", "empresa_sup": "INGETEC, S.A. DE C.V.", "admin": "Oscar Sandoval", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Gestion de continuidad educativa", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.75569444, "lon": -88.94994444, "grupo": 3, "no": "3", "codigo": "11824", "centro": "COMPLEJO EDUCATIVO “JOSÉ MARIA LEMUS P.\"", "depto": "CUSCATLÁN", "distrito": "MONTE SAN JUAN", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "2025-02-01 00:00:00", "empresa_sup": "UDP CONSORCIO GOC-GEOCONSULT", "admin": "Henry Carranza", "etapa": "Construcción", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "GT/DOT/122/2025", "fecha_ra": "29/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.81611111, "lon": -89.05694444, "grupo": 3, "no": "4", "codigo": "11827", "centro": "COMPLEJO EDUCATIVO \" DOCTOR PIO ROMERO BOSQUE\"", "depto": "CUSCATLÁN", "distrito": "ORATORIO DE CONCEPCION", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "2025-02-01 00:00:00", "empresa_sup": "UDP CONSORCIO GOC-GEOCONSULT", "admin": "Henry Carranza", "etapa": "Construcción", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "GT/DOT/122/2025", "fecha_ra": "29/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.72138889, "lon": -88.93555556, "grupo": 3, "no": "5", "codigo": "11809", "centro": "CENTRO ESCOLAR \"EULOGIA RIVAS\"", "depto": "CUSCATLÁN", "distrito": "COJUTEPEQUE", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "2025-02-01 00:00:00", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Henry Carranza", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.60147222, "lon": -88.92661111, "grupo": 3, "no": "6", "codigo": "12024", "centro": "CENTRO ESCOLAR “TIMOTEO LIEVANO”", "depto": "LA PAZ", "distrito": "SAN PEDRO NONUALCO", "empresa_obras": "A.P. & G, CONSTRUCTORES S.A. DE C.V.", "contrato": "2025-02-01 00:00:00", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Henry Carranza", "etapa": "Construcción", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "GT/DOT/122/2025", "fecha_ra": "29/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.90975, "lon": -89.49330556, "grupo": 3, "no": "7", "codigo": "10221", "centro": "COMPLEJO EDUCATIVO \" ANSELMA SÁNCHEZ DE MANCÍA \"", "depto": "SANTA ANA", "distrito": "EL CONGO", "empresa_obras": "UDP FYS-MAYA", "contrato": "2024-12-01 00:00:00", "empresa_sup": "SIN ADJUDICAR", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 14.02502778, "lon": -89.52436111, "grupo": 3, "no": "8", "codigo": "10428", "centro": "COMPLEJO EDUCATIVO \"HACIENDA SAN CAYETANO\"", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "UDP FYS-MAYA", "contrato": "2024-12-01 00:00:00", "empresa_sup": "INGETEC, S.A. DE C.V.", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.80019444, "lon": -88.15472222, "grupo": 3, "no": "9", "codigo": "13241", "centro": "CENTRO ESCOLAR \"BENITO JUAREZ\"", "depto": "MORAZÁN", "distrito": "OSICALA", "empresa_obras": "ESPACIOS RD ARQUITECTOS S.A. DE C.V.", "contrato": "2025-03-01 00:00:00", "empresa_sup": "INGETEC, S.A. DE C.V.", "admin": "Henry Carranza", "etapa": "Construcción", "avance": 0.831, "estado_pegas": "Ejecución", "reubicacion": "Continuidad virtual", "ra": "GT/DOT/153/2025", "fecha_ra": "23/10/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.90694444, "lon": -88.15777778, "grupo": 3, "no": "10", "codigo": "13205", "centro": "COMPLEJO EDUCATIVO \"FLORINDA DE JUAREZ ALEMAN\"", "depto": "MORAZÁN", "distrito": "JOCOAITIQUE", "empresa_obras": "ESPACIOS RD ARQUITECTOS S.A. DE C.V.", "contrato": "2025-03-01 00:00:00", "empresa_sup": "INGETEC, S.A. DE C.V.", "admin": "Henry Carranza", "etapa": "Construcción", "avance": 0.8083, "estado_pegas": "Ejecución", "reubicacion": "Continuidad virtual", "ra": "GT/DOT/153/2025", "fecha_ra": "23/10/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.839, "lon": -88.84783333, "grupo": 4, "no": "1", "codigo": "12186", "centro": "CENTRO ESCOLAR \"BERNARDO PERDOMO\"", "depto": "CABAÑAS", "distrito": "ILOBASCO", "empresa_obras": "OPCION TÉCNICA S.A. DE C.V.", "contrato": "2025-05-01 00:00:00", "empresa_sup": "O.S. CONSTRUCTORES, S.A. DE C.V.", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.851, "lon": -88.90766667, "grupo": 4, "no": "2", "codigo": "12278", "centro": "CENTRO ESCOLAR \"DOCTOR IRENEO CHACÓN\"", "depto": "CABAÑAS", "distrito": "TEJUTEPEQUE", "empresa_obras": "OPCION TÉCNICA S.A. DE C.V.", "contrato": "2025-05-01 00:00:00", "empresa_sup": "O.S. CONSTRUCTORES, S.A. DE C.V.", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.68833333, "lon": -88.97861111, "grupo": 4, "no": "3", "codigo": "11785", "centro": "COMPLEJO EDUCATIVO \"MARCOS GOMEZ NUÑEZ\"", "depto": "CUSCATLÁN", "distrito": "CANDELARIA", "empresa_obras": "OPCION TÉCNICA S.A. DE C.V.", "contrato": "2025-05-01 00:00:00", "empresa_sup": "O.S. CONSTRUCTORES, S.A. DE C.V.", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.73063889, "lon": -88.88708333, "grupo": 4, "no": "4", "codigo": "11873", "centro": "CENTRO ESCOLAR SAN RAFAEL CEDROS", "depto": "CUSCATLÁN", "distrito": "SAN RAFAEL CEDROS", "empresa_obras": "OPCION TÉCNICA S.A. DE C.V.", "contrato": "2025-05-01 00:00:00", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.93805556, "lon": -89.02805556, "grupo": 4, "no": "5", "codigo": "11907", "centro": "CENTRO ESCOLAR “ISACC RUIZ ARAUJO”", "depto": "CUSCATLÁN", "distrito": "SUCHITOTO", "empresa_obras": "AVM INGENIEROS S.A DE C.V.", "contrato": "2025-07-01 00:00:00", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Maria Delia Ramirez", "etapa": "Diseño de Carpeta", "avance": 1.0, "estado_pegas": "Elaboración", "reubicacion": "Gestion de continuidad educativa", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.87683333, "lon": -89.06772222, "grupo": 4, "no": "6", "codigo": "72071", "centro": "COMPLEJO EDUCATIVO \"DOCTOR GUILLERMO MANUEL UNGO\"", "depto": "CUSCATLÁN", "distrito": "SUCHITOTO", "empresa_obras": "AVM INGENIEROS S.A DE C.V.", "contrato": "2025-07-01 00:00:00", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Maria Delia Ramirez", "etapa": "Diseño de Carpeta", "avance": 1.0, "estado_pegas": "Elaboración", "reubicacion": "Gestion de continuidad educativa", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.49611111, "lon": -89.03027778, "grupo": 4, "no": "7", "codigo": "11926", "centro": "CENTRO ESCOLAR \"FABIO IGNACIO MAGAÑA\"", "depto": "LA PAZ", "distrito": "EL ROSARIO", "empresa_obras": "UDP AP&G - EUROT", "contrato": "2025-06-01 00:00:00", "empresa_sup": "O.S. CONSTRUCTORES, S.A. DE C.V.", "admin": "Ana Mayra de Pineda", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Gestion de continuidad educativa", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.74089225, "lon": -89.4271489, "grupo": 4, "no": "8", "codigo": "11178", "centro": "CENTRO ESCOLAR \" CANTÓN ATEOS \"", "depto": "LA LIBERTAD", "distrito": "SACACOYO", "empresa_obras": "UDP AP&G - EUROT", "contrato": "2025-06-01 00:00:00", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Ana Mayra de Pineda", "etapa": "Construcción", "avance": 0.158, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.78361111, "lon": -89.33055556, "grupo": 4, "no": "9", "codigo": "68123", "centro": "CENTRO ESCOLAR CANTÓN SITIO GRANDE *", "depto": "LA LIBERTAD", "distrito": "SAN JUAN OPICO", "empresa_obras": "UDP AP&G - EUROT", "contrato": "2025-06-01 00:00:00", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Ana Mayra de Pineda", "etapa": "Construcción", "avance": 0.17, "estado_pegas": "Ejecución", "reubicacion": "Continuidad virtual", "ra": "GT/DOT/122/2025", "fecha_ra": "29/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.71555556, "lon": -89.415, "grupo": 4, "no": "10", "codigo": "68057", "centro": "CENTRO ESCOLAR CASERÍO DOS DE MAYO, CANTÓN LA LABOR *", "depto": "LA LIBERTAD", "distrito": "JAYAQUE", "empresa_obras": "UDP AP&G - EUROT", "contrato": "2025-06-01 00:00:00", "empresa_sup": "CONSORCIO (APPLUS-INGELOG-NOVOTEC)", "admin": "Ana Mayra de Pineda", "etapa": "Construcción", "avance": 0.16, "estado_pegas": "Ejecución", "reubicacion": "Continuidad virtual", "ra": "GT/DOT/91/2025", "fecha_ra": "16/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.9425, "lon": -89.37222222, "grupo": 5, "no": "1", "codigo": "11209", "centro": "CENTRO ESCOLAR HACIENDA VERACRUZ, CANTÓN BUENA VISTA", "depto": "LA LIBERTAD", "distrito": "SAN JUAN OPICO", "empresa_obras": "JASPORT COMPANY S.A. DE C.V.", "contrato": "25/2024", "empresa_sup": "CONSORCIO H + M ARQUITECTOS", "admin": "Raquel Carballo", "etapa": "Diseño de Carpeta", "avance": 0.8, "estado_pegas": "Elaboración", "reubicacion": "Gestion de continuidad educativa", "ra": "MARN-DEC-GEA-Corr6155-2023-2276-2023", "fecha_ra": "08/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 13.915, "lon": -89.42055556, "grupo": 5, "no": "2", "codigo": "86408", "centro": "CENTRO ESCOLAR CANTÓN NOMBRE DE DIOS", "depto": "LA LIBERTAD", "distrito": "SAN JUAN OPICO", "empresa_obras": "OPCION TÉCNICA S.A. DE C.V.", "contrato": "24/2024", "empresa_sup": "CONSORCIO H + M ARQUITECTOS", "admin": "Maria Delia Ramirez", "etapa": "Diseño de Carpeta", "avance": 0.38, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 13.87833333, "lon": -89.30611111, "grupo": 5, "no": "3", "codigo": "68129", "centro": "CENTRO ESCOLAR CANTÓN SANTA TERESA", "depto": "LA LIBERTAD", "distrito": "SAN MATIAS", "empresa_obras": "OPCION TÉCNICA S.A. DE C.V.", "contrato": "24/2024", "empresa_sup": "CONSORCIO H + M ARQUITECTOS", "admin": "Maria Delia Ramirez", "etapa": "Diseño de Carpeta", "avance": 0.38, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.95975, "lon": -89.54402778, "grupo": 5, "no": "4", "codigo": "10463", "centro": "CENTRO ESCOLAR TEODORO MORENO", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "OPCION TÉCNICA S.A. DE C.V.", "contrato": "24/2024", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Maria Delia Ramirez", "etapa": "Diseño de Carpeta", "avance": 0.38, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 13.67111111, "lon": -89.41027778, "grupo": 5, "no": "5", "codigo": "11276", "centro": "COMPLEJO EDUCATIVO TALNIQUE", "depto": "LA LIBERTAD", "distrito": "TALNIQUE", "empresa_obras": "ICSA S.A. DE C.V.", "contrato": "27/2024", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Raquel Carballo", "etapa": "Construcción", "avance": 0.53, "estado_pegas": "Ejecución", "reubicacion": "Multimodal", "ra": "MARN-DEC-GEA-Corr1161-2025-893-2025", "fecha_ra": "29/04/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.56875, "lon": -88.34383333, "grupo": 5, "no": "6", "codigo": "12907", "centro": "CENTRO ESCOLAR JOSÉ EVARISTO MEJÍA", "depto": "SAN MIGUEL", "distrito": "LOLOTIQUE", "empresa_obras": "ADICT S.A. DE C.V.", "contrato": "23/2024", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Alejandra Estrada", "etapa": "Construcción", "avance": 0.1237, "estado_pegas": "Ejecución", "reubicacion": "Continuidad virtual", "ra": "GT/DOT/122/2025", "fecha_ra": "29/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.53119444, "lon": -88.31152778, "grupo": 5, "no": "7", "codigo": "12856", "centro": "COMPLEJO EDUCATIVO JOSÉ A. MORA", "depto": "SAN MIGUEL", "distrito": "CHINAMECA", "empresa_obras": "ADICT S.A. DE C.V.", "contrato": "23/2024", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Alejandra Estrada", "etapa": "Construcción", "avance": 0.1311, "estado_pegas": "Ejecución", "reubicacion": "Continuidad virtual", "ra": "GT/DOT/122/2025", "fecha_ra": "29/09/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.47494444, "lon": -88.19461111, "grupo": 5, "no": "8", "codigo": "12991", "centro": "CENTRO ESCOLAR CIUDAD JARDÍN Nº 3", "depto": "SAN MIGUEL", "distrito": "SAN MIGUEL", "empresa_obras": "ADICT S.A. DE C.V.", "contrato": "23/2024", "empresa_sup": "INGETEC, S.A. DE C.V.", "admin": "Alejandra Estrada", "etapa": "Construcción", "avance": 0.31, "estado_pegas": "Ejecución", "reubicacion": "Continuidad virtual", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 14.00675, "lon": -89.49347222, "grupo": 5, "no": "9", "codigo": "10452", "centro": "CENTRO ESCOLAR VALLE EL CARMEN CANTÓN NATIVIDAD", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "UDP AP&G - EUROT", "contrato": "26/2024", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Ana Mayra de Pineda", "etapa": "Diseño de Carpeta", "avance": 0.0, "estado_pegas": "Elaboración", "reubicacion": "Gestion de continuidad educativa", "ra": "MARN-DEC-GEA-Corr6155-2023-2276-2023", "fecha_ra": "08/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 14.14544444, "lon": -89.56147222, "grupo": 5, "no": "10", "codigo": "10543", "centro": "CENTRO ESCOLAR MAGDALENO BARCENAS FLORES", "depto": "SANTA ANA", "distrito": "TEXISTEPEQUE", "empresa_obras": "UDP AP&G - EUROT", "contrato": "26/2024", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Ana Mayra de Pineda", "etapa": "Construcción", "avance": 0.185, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr6155-2023-2276-2023", "fecha_ra": "08/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 14.04336111, "lon": -88.93752778, "grupo": 6, "no": "1", "codigo": "10797", "centro": "CENTRO ESCOLAR \"HÉROES DEL 11 DE ENERO\"", "depto": "CHALATENANGO", "distrito": "CHALATENANGO", "empresa_obras": "CONSORCIO AVM-ICSA", "contrato": "2025-09-01 00:00:00", "empresa_sup": "VIELCA SUCURSA EL SALVADOR", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.63, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 14.31525, "lon": -89.17013889, "grupo": 6, "no": "2", "codigo": "10865", "centro": "CENTRO ESCOLAR \"22 DE JUNIO\"", "depto": "CHALATENANGO", "distrito": "LA PALMA", "empresa_obras": "CONSORCIO AVM-ICSA", "contrato": "2025-09-01 00:00:00", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.63, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.51030556, "lon": -88.34552778, "grupo": 6, "no": "3", "codigo": "12857", "centro": "CENTRO ESCOLAR \"JULIÁN APARICIO\"", "depto": "SAN MIGUEL", "distrito": "CHINAMECA", "empresa_obras": "ADICT S.A. DE C.V.", "contrato": "2025-10-01 00:00:00", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Oscar Sandoval", "etapa": "Diseño de Carpeta", "avance": 0.75, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.87645, "lon": -88.62286667, "grupo": 6, "no": "4", "codigo": "12269", "centro": "CENTRO ESCOLAR \"FERMÍN VELASCO\"", "depto": "CABAÑAS", "distrito": "SENSUNTEPEQUE", "empresa_obras": "APCA CONSTRUCCIONES BOBURG", "contrato": "2025-08-01 00:00:00", "empresa_sup": "LEON SOL, S.A. DE C.V.", "admin": "Manuel Vega", "etapa": "Diseño de Carpeta", "avance": 0.83, "estado_pegas": "Elaboración", "reubicacion": "Elaboración", "ra": "GT/DOT/153/2025", "fecha_ra": "23/10/2025", "monto": 0, "monto_pegas": 0}, {"lat": 14.02830556, "lon": -89.44213889, "grupo": 7, "no": "1", "codigo": "10444", "centro": "CENTRO ESCOLAR CANTÓN LOS APOYOS", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "DISA S.A. DE C.V.", "contrato": "16/2025", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Iris Flores", "etapa": "Construcción", "avance": 0.99, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 14.05119444, "lon": -89.46880556, "grupo": 7, "no": "2", "codigo": "10447", "centro": "CENTRO ESCOLAR CASERÍO EL AMATILLO", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "DISA S.A. DE C.V.", "contrato": "16/2025", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Iris Flores", "etapa": "Construcción", "avance": 0.95, "estado_pegas": "Ejecución", "reubicacion": "Multimodal", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 14.05113889, "lon": -89.43530556, "grupo": 7, "no": "3", "codigo": "62096", "centro": "CENTRO ESCOLAR CASERÍO LAS MARIAS, CANTÓN LOS APOYOS", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "DISA S.A. DE C.V.", "contrato": "16/2025", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Iris Flores", "etapa": "Construcción", "avance": 0.96, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr6155-2023-2276-2023", "fecha_ra": "08/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 14.10575, "lon": -89.50783333, "grupo": 7, "no": "4", "codigo": "10527", "centro": "CENTRO ESCOLAR CASERÍO TEXIS JUNCTION, CANTÓN CHILCUYO", "depto": "SANTA ANA", "distrito": "TEXISTEPEQUE", "empresa_obras": "DISA S.A. DE C.V.", "contrato": "16/2025", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Iris Flores", "etapa": "Construcción", "avance": 0.99, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr5248-2024-2626-2024", "fecha_ra": "23/12/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.94612521, "lon": -89.39329276, "grupo": 7, "no": "5", "codigo": "68118", "centro": "CENTRO ESCOLAR CANTÓN SAN JOSE LA CUEVA", "depto": "LA LIBERTAD", "distrito": "SAN JUAN OPICO", "empresa_obras": "DISA S.A. DE C.V.", "contrato": "16/2025", "empresa_sup": "CONSORCIO H + M ARQUITECTOS", "admin": "Iris Flores", "etapa": "Construcción", "avance": 0.9, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr6155-2023-2276-2023", "fecha_ra": "08/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 13.76616667, "lon": -89.68369444, "grupo": 7, "no": "6", "codigo": "64042", "centro": "CENTRO ESCOLAR CANTÓN TAPALCHUCUT NORTE", "depto": "SONSONATE", "distrito": "IZALCO", "empresa_obras": "DISA S.A. DE C.V.", "contrato": "16/2025", "empresa_sup": "O.S. CONSTRUCTORES, S.A. DE C.V.", "admin": "Iris Flores", "etapa": "Construcción", "avance": 0.99, "estado_pegas": "Ejecución", "reubicacion": "Reubicado", "ra": "MARN-DEC-GEA-Corr5248-2024-2626-2024", "fecha_ra": "23/12/2024", "monto": 0, "monto_pegas": 0}, {"lat": 13.82458333, "lon": -88.8075, "grupo": 8, "no": "1", "codigo": "12178", "centro": "CENTRO ESCOLAR CANTÓN LA QUESERA", "depto": "CABAÑAS", "distrito": "ILOBASCO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Sin adjudicar", "etapa": "Proceso de licitacion / Adjudicado", "avance": 1.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.81341667, "lon": -88.79463333, "grupo": 8, "no": "2", "codigo": "12180", "centro": "COMPLEJO EDUCATIVO CASERÍO RANCHO QUEMADO, CANTÓN MAQUILISHUAT", "depto": "CABAÑAS", "distrito": "ILOBASCO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Sin adjudicar", "etapa": "Proceso de licitacion / Adjudicado", "avance": 1.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 13.62405556, "lon": -89.74072222, "grupo": 9, "no": "1", "codigo": "64113", "centro": "CENTRO ESCOLAR CASERIO COLONIA ARTURO ARMANDO MOLINA, CANTON EL EDEN", "depto": "SONSONATE", "distrito": "ACAJUTLA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "INGETEC, S.A. DE C.V.", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta", "avance": 0.85, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 13.6425, "lon": -89.40916667, "grupo": 9, "no": "2", "codigo": "68030", "centro": "CENTRO ESCOLAR CANTON SAN ANTONIO", "depto": "LA LIBERTAD", "distrito": "COMASAGUA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta", "avance": 0.85, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 13.61005556, "lon": -88.02416667, "grupo": 9, "no": "3", "codigo": "13218", "centro": "CENTRO ESCOLAR \"GENERAL FRANCISCO MORAZÁN\"", "depto": "MORAZÁN", "distrito": "JOCORO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "O.S. CONSTRUCTORES, S.A. DE C.V.", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta", "avance": 0.85, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "GT/DOT/157/2025", "fecha_ra": "29/10/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.94108333, "lon": -89.61911111, "grupo": 9, "no": "4", "codigo": "10462", "centro": "CENTRO ESCOLAR CANTÓN TABLÓN MATAZANO", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "VIELCA-CONCREMAT-GEOMETRICA", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta", "avance": 0.85, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": 13.83675, "lon": -87.82508333, "grupo": 9, "no": "5", "codigo": "13502", "centro": "CENTRO ESCOLAR CASERÍO LA CEIBA CANTÓN PUEBLO", "depto": "LA UNIÓN", "distrito": "POLOROS", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "INGETEC, S.A. DE C.V.", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta", "avance": 0.85, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "GT/DOT/157/2025", "fecha_ra": "29/10/2025", "monto": 0, "monto_pegas": 0}, {"lat": 13.66194444, "lon": -89.37166667, "grupo": 9, "no": "6", "codigo": "11048", "centro": "CENTRO ESCOLAR CASERÍO SANTA ADELAIDA", "depto": "LA LIBERTAD", "distrito": "COMASAGUA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "LEONEL AVILES, S.A. DE C.V.", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta", "avance": 0.85, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Gestion de continuidad educativa", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": -89.53197222, "lon": 13.967, "grupo": 11, "no": "1", "codigo": "10429", "centro": "CE TRANSITO CIENFUEGOS", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.64972222, "lon": 14.11238889, "grupo": 11, "no": "2", "codigo": "10198", "centro": "CE SOLEDAD MORENO DE BENAVIDES", "depto": "SANTA ANA", "distrito": "CANDELARIA DE LA FRONTERA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.67533333, "lon": 13.98366667, "grupo": 11, "no": "3", "codigo": "10268", "centro": "CE FRANCISCO IGNACIO CORDERO", "depto": "SANTA ANA", "distrito": "CHALCHUAPA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.55997222, "lon": 14.10125, "grupo": 11, "no": "4", "codigo": "10455", "centro": "CE CANTON EL PINALON", "depto": "SANTA ANA", "distrito": "SANTA ANA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.64625, "lon": 13.99775, "grupo": 11, "no": "5", "codigo": "86287", "centro": "COMP EDUC LOTIFICACION EL ROSARIO CANTON LOS AMATES", "depto": "SANTA ANA", "distrito": "SAN SEBASTIAN SALITRILLO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.18361111, "lon": 13.68194444, "grupo": 11, "no": "6", "codigo": "13242", "centro": "CE UNION PANAMERICAN", "depto": "MORAZAN", "distrito": "PERQUIN", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.09291667, "lon": 13.64777778, "grupo": 11, "no": "7", "codigo": "13249", "centro": "CE LIC JUAN JOSE GUZMAN", "depto": "MORAZAN", "distrito": "SAN CARLOS", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -87.84394444, "lon": 13.33897222, "grupo": 11, "no": "8", "codigo": "13443", "centro": "COMP EDUC JOSE PANTOJA HIJO", "depto": "LA UNION", "distrito": "LA UNION, URBANA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -87.843, "lon": 13.33291667, "grupo": 11, "no": "9", "codigo": "13446", "centro": "CENTRO ESCOLAR BARRIO LA FATIMA", "depto": "LA UNION", "distrito": "LA UNION, URBANA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -87.85427778, "lon": 13.34055556, "grupo": 11, "no": "10", "codigo": "10820", "centro": "CE REPUBLICA DE HONDURAS", "depto": "CHALATENANGO", "distrito": "CHALATENANGO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.23305556, "lon": 14.18027778, "grupo": 11, "no": "11", "codigo": "10756", "centro": "CE MIGUEL CABRERA", "depto": "CHALATENANGO", "distrito": "AGUA CALIENTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.29388889, "lon": 14.12333333, "grupo": 11, "no": "12", "codigo": "10915", "centro": "CE BARRIO EL CENTRO", "depto": "CHALATENANGO", "distrito": "NUEVA CONCEPCION", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.18044444, "lon": 14.33997222, "grupo": 11, "no": "13", "codigo": "10949", "centro": "CE JOSE MARTI", "depto": "CHALATENANGO", "distrito": "SAN IGNACIO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.57783333, "lon": 13.81588889, "grupo": 11, "no": "14", "codigo": "82062", "centro": "CE CASERIO LAS LAJAS", "depto": "SAN MIGUEL", "distrito": "LOLOTIQUE", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.34430556, "lon": 13.81497222, "grupo": 11, "no": "15", "codigo": "12975", "centro": "CE SAN LUIS DE LA REINA", "depto": "SAN MIGUEL", "distrito": "SAN LUIS DE LA REINA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.36116667, "lon": 13.7175, "grupo": 11, "no": "16", "codigo": "13122", "centro": "CENTRO ESCOLAR DOCTOR MANUEL QUIJANO HERNANDEZ", "depto": "SAN MIGUEL", "distrito": "SESORI", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.63254167, "lon": 13.94596667, "grupo": 11, "no": "17", "codigo": "12294", "centro": "CENTRO ESCOLAR ALBERTO MENJIVAR RODRIGUEZ", "depto": "CABAÑAS", "distrito": "VICTORIA, URBANA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.29777778, "lon": 13.53055556, "grupo": 11, "no": "18", "codigo": "11095", "centro": "CENTRO ESCOLAR CANTON EL CIMARRON", "depto": "LA LIBERTAD", "distrito": "LA LIBERTAD", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.51861111, "lon": 13.59055556, "grupo": 11, "no": "19", "codigo": "11284", "centro": "CENTRO ESCOLAR DE TEOTEPEQUE", "depto": "LA LIBERTAD", "distrito": "TEOTEPEQUE", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.12277778, "lon": 13.59805556, "grupo": 11, "no": "20", "codigo": "10084", "centro": "CENTRO ESCOLAR URBANIZACION MONTELIMAR", "depto": "LA PAZ", "distrito": "OLOCUILTA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.91655556, "lon": 13.30594444, "grupo": 11, "no": "21", "codigo": "12132", "centro": "COMPLEJO EDUCATIVO PROFESOR REYNALDO PADILLA", "depto": "LA PAZ", "distrito": "SAN LUIS LA HERRADURA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.91305556, "lon": 13.75111111, "grupo": 11, "no": "22", "codigo": "11816", "centro": "COMPLEJO EDUCATIVO ANGELINA ANGEL PANAMEÑO", "depto": "CUSCATLAN", "distrito": "EL CARMEN", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.86922987, "lon": 13.50435055, "grupo": 11, "no": "23", "codigo": "12116", "centro": "CENTRO ESCOLAR SAN AGUSTIN", "depto": "LA PAZ", "distrito": "ZACATECOLUCA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.85616667, "lon": 13.84333333, "grupo": 11, "no": "24", "codigo": "12157", "centro": "CENTRO ESCOLAR PROFESOR JUAN ROBERTO JUAREZ", "depto": "CABAÑAS", "distrito": "ILOBASCO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.88402778, "lon": 13.45508333, "grupo": 11, "no": "25", "codigo": "12115", "centro": "CENTRO ESCOLAR CANTON TIERRA BLANCA", "depto": "LA PAZ", "distrito": "ZACATECOLUCA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin adjudicar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.26194444, "lon": 13.91166667, "grupo": 10, "no": "1", "codigo": "68098", "centro": "CENTRO ESCOLAR CASERÍO TACACHICO, CANTÓN TACACHICO", "depto": "LA LIBERTAD", "distrito": "QUEZALTEPEQUE", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.63775, "lon": 13.74338889, "grupo": 10, "no": "2", "codigo": "10621", "centro": "CENTRO ESCOLAR CANTÓN CEIBA DEL CHARCO", "depto": "SONSONATE", "distrito": "IZALCO", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.49925, "lon": 13.75275, "grupo": 10, "no": "3", "codigo": "64125", "centro": "CENTRO ESCOLAR CASERÍO COLONIA LA COLINA, CANTÓN EL ROSARIO", "depto": "SONSONATE", "distrito": "ARMENIA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -87.83952778, "lon": 13.87616667, "grupo": 10, "no": "4", "codigo": "13459", "centro": "COMPLEJO EDUCATIVO CATALINO AMAYA", "depto": "LA UNIÓN", "distrito": "NUEVA ESPARTA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.29961111, "lon": 13.51508333, "grupo": 10, "no": "5", "codigo": "82078", "centro": "COMPLEJO EDUCATIVO CANTÓN EL JOBO", "depto": "SAN MIGUEL", "distrito": "MONCAGUA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.84530556, "lon": 13.63658333, "grupo": 10, "no": "6", "codigo": "10559", "centro": "CENTRO ESCOLAR CANTÓN EL SUNZA", "depto": "SONSONATE", "distrito": "ACAJUTLA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -89.82666667, "lon": 13.59108333, "grupo": 10, "no": "7", "codigo": "10544", "centro": "CENTRO ESCOLAR BERND GRABS", "depto": "SONSONATE", "distrito": "ACAJUTLA", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": -88.22758333, "lon": 13.42733333, "grupo": 10, "no": "8", "codigo": "13008", "centro": "CENTRO ESCOLAR CASERÍO CHAPARRASTIQUE, CANTÓN EL NIÑO", "depto": "SAN MIGUEL", "distrito": "SAN MIGUEL", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "MARN-DEC-GEA-Corr6405-2023-2339-2023", "fecha_ra": "20/12/2023", "monto": 0, "monto_pegas": 0}, {"lat": -87.868, "lon": 13.696, "grupo": 10, "no": "9", "codigo": "13332", "centro": "CENTRO ESCOLAR CANTÓN TULIMA", "depto": "LA UNIÓN", "distrito": "ANAMOROS", "empresa_obras": "SIN ADJUDICAR", "contrato": "SIN ADJUDICAR", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "Diseño de Carpeta Sin adjudicar", "avance": 0.0, "estado_pegas": "Elaborado sin iniciar", "reubicacion": "Elaborado sin iniciar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "26", "codigo": "76008", "centro": "CE CANTON EL MESTIZO.", "depto": "CABAÑAS", "distrito": "CABAÑAS OESTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "27", "codigo": "11045", "centro": "CE CANTON EL FARO", "depto": "LA LIBERTAD", "distrito": "LIBERTAD SUR", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "28", "codigo": "13513", "centro": "COM EDUC PROF RAFAEL ANGEL MARTINEZ RIOS", "depto": "LA UNION", "distrito": "UNION NORTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "29", "codigo": "11059", "centro": "CE CANTON EL ZONTE", "depto": "LA LIBERTAD", "distrito": "LIBERTAD COSTA", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "30", "codigo": "86287", "centro": "COMP EDUC LOTIICAFCION EL ROSARIO CANTON LOS AMATES", "depto": "SANTA ANA", "distrito": "SANTA ANA OESTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "31", "codigo": "10221", "centro": "COMPLEJO EDUCATIVO \" ANSELMA SÁNCHEZ DE MANCÍA \"", "depto": "SANTA ANA", "distrito": "SANTA ANA ESTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "32", "codigo": "10428", "centro": "COMPLEJO EDUCATIVO \"HACIENDA SAN CAYETANO\"", "depto": "SANTA ANA", "distrito": "SANTA ANA CENTRO", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "33", "codigo": "12156", "centro": "CENTRO ESCOLAR CASERÍO POTRERILLOS, CANTÓN SAN FRANCISCO IRAHETA", "depto": "CABAÑAS", "distrito": "CABAÑAS OESTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "34", "codigo": "12158", "centro": "CENTRO ESCOLAR CANTÓN LAS HUERTAS", "depto": "CABAÑAS", "distrito": "CABAÑAS OESTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "35", "codigo": "12232", "centro": "COMPLEJO EDUCATIVO CASERÍO HUISCOYOL, CANTÓN LA TRINIDAD", "depto": "CABAÑAS", "distrito": "CABAÑAS ESTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "36", "codigo": "86015", "centro": "CENTRO ESCOLAR CASERÍO EL ALTO, CANTÓN HUERTAS VIEJAS", "depto": "LA UNIÓN", "distrito": "LA UNIÓN NORTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "37", "codigo": "84012", "centro": "CENTRO ESCOLAR CANÓON CORRALITO", "depto": "MORAZÁN", "distrito": "MORAZÁN NORTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "38", "codigo": "84014", "centro": "CENTRO ESCOLAR CASERÍO LLANO GRANDE, CANTÓN CORRALITO", "depto": "MORAZÁN", "distrito": "MORAZÁN NORTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "39", "codigo": "84119", "centro": "CENTRO ESCOLAR CASERÍO COPANTE, CANTÓN ESTANCIA", "depto": "MORAZÁN", "distrito": "MORAZÁN NORTE", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}, {"lat": 0, "lon": 0, "grupo": 11, "no": "40", "codigo": "13054", "centro": "CENTRO ESCOLAR CASERÍO SANTA LUCIA, CANTÓN LAS LOMITAS", "depto": "SAN MIGUEL", "distrito": "SAN MIGUEL CENTRO", "empresa_obras": "SIN ADJUDICAR", "contrato": "", "empresa_sup": "SIN ADJUDICAR", "admin": "Sin iniciar", "etapa": "SIN ADJUDICAR", "avance": 0.0, "estado_pegas": "Sin elaborar", "reubicacion": "Sin elaborar", "ra": "Sin tramitar", "fecha_ra": "", "monto": 0, "monto_pegas": 0}];
 
-/* ═══════════════════════════════════════════════════════
-   UTILIDADES
-═══════════════════════════════════════════════════════ */
-const debouncedFiltros = () => { clearTimeout(_dTimer); _dTimer = setTimeout(ejecutarFiltros, 280); };
+const af={};let sKey=null,sAsc=true,vistaActual='todos';
+function hasContrato(d){return d.contrato&&/\d+\/\d+/.test(d.contrato);}
+function baseData(){return vistaActual==='contrato'?DATA.filter(hasContrato):DATA;}
+function uniq(k){return[...new Set(baseData().map(d=>String(d[k]||'')).filter(Boolean))].sort((a,b)=>isNaN(+a)||isNaN(+b)?a.localeCompare(b):+a-+b);}
+function bc(ep){if(ep==='Implementado')return'bg';if(ep==='Ejecución'||ep==='Elaboración')return'bb';if(ep==='Elaborado sin iniciar')return'ba';if(ep==='Sin elaborar')return'br2';return'bgr';}
+function pc(a){return a>=0.8?'#16a34a':a>=0.4?'#2563eb':a>0?'#d97706':'#94a3b8';}
+function dc(d){if(d.estado_pegas==='Implementado')return'#22c55e';if(d.estado_pegas==='Ejecución'||d.estado_pegas==='Elaboración')return'#3b82f6';if(d.estado_pegas==='Elaborado sin iniciar')return'#f59e0b';return'#94a3b8';}
 
-function toast(msg, ico='ℹ️'){
-  const el = document.getElementById('toast');
-  el.innerHTML = `${ico} ${msg}`;
-  el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 2800);
+function setVista(v){
+  vistaActual=v;
+  const btnT=document.getElementById('btn-todos');
+  const btnC=document.getElementById('btn-contrato');
+  btnT.className='btn-vista'+(v==='todos'?' v-todos':'');
+  btnC.className='btn-vista'+(v==='contrato'?' v-contrato':'');
+  // Limpiar filtros activos y reconstruir opciones según el nuevo universo
+  Object.keys(af).forEach(k=>delete af[k]);
+  buildFilters();
+  render();
+}
+function updateVistasBadges(){
+  const conContrato=DATA.filter(hasContrato).length;
+  document.getElementById('badge-todos').textContent=DATA.length;
+  document.getElementById('badge-contrato').textContent=conContrato;
 }
 
-function setEstado(tipo, msg){
-  const bar  = document.getElementById('carga-bar');
-  const spin = document.getElementById('mini-spin');
-  const txt  = document.getElementById('carga-msg');
-  const chip = document.getElementById('chip-txt');
-  bar.className = 'carga-bar ' + tipo;
-  spin.style.display = (tipo==='ok'||tipo==='error') ? 'none' : 'block';
-  txt.textContent  = msg;
-  chip.textContent = msg;
+function buildFilters(){
+  const g=document.getElementById('filters-panel');g.innerHTML='';
+  FILTER_COLS.forEach(col=>{
+    const vals=uniq(col.key);
+    const w=document.createElement('div');w.className='fi';
+    const l=document.createElement('div');l.className='fl';l.textContent=col.label;
+    const s=document.createElement('select');s.className='fs';s.id='f_'+col.key;
+    s.innerHTML='<option value="">Todos</option>'+vals.map(v=>`<option value="${v}">${v}</option>`).join('');
+    s.onchange=function(){if(this.value){af[col.key]=this.value;this.classList.add('on');}else{delete af[col.key];this.classList.remove('on');}render();};
+    w.append(l,s);g.append(w);
+  });
 }
-
-function pillaColor(etapa=''){
-  if(etapa.toLowerCase().includes('ejecuc')) return {bg:'#fff7ed',c:'#ea580c'};
-  if(etapa.toLowerCase().includes('final'))  return {bg:'#f0fdf4',c:'#16a34a'};
-  if(etapa.toLowerCase().includes('susp'))   return {bg:'#fef2f2',c:'#dc2626'};
-  if(etapa.toLowerCase().includes('inic'))   return {bg:'#eff6ff',c:'#2563eb'};
-  return {bg:'#f1f5f9',c:'#475569'};
+function buildHeader(){
+  document.getElementById('thead').innerHTML='<tr>'+TABLE_COLS.map(c=>`<th style="min-width:${c.w}px" id="th_${c.k}" onclick="sortBy('${c.k}')">${c.l} ↕</th>`).join('')+'</tr>';
 }
-
-/* ═══════════════════════════════════════════════════════
-   TABS SIDEBAR
-═══════════════════════════════════════════════════════ */
-function switchTab(id){
-  document.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  document.getElementById('panel-'+id).classList.add('active');
+function filtered(){
+  const gs=document.getElementById('gs').value.toLowerCase();
+  return baseData().filter(d=>{
+    for(const[k,v] of Object.entries(af))if(String(d[k]||'')!==v)return false;
+    if(gs&&!TABLE_COLS.some(c=>String(d[c.k]||'').toLowerCase().includes(gs)))return false;
+    return true;
+  });
 }
-
-/* ═══════════════════════════════════════════════════════
-   MAPA
-═══════════════════════════════════════════════════════ */
-function iniciarMapa(){
-  const calles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19});
-  const sat    = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19});
-  const topo   = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'OpenTopoMap',maxZoom:17});
-
-  mapa = L.map('map',{center:[13.794,-88.896],zoom:9,layers:[calles],zoomControl:false});
-  L.control.zoom({position:'topright'}).addTo(mapa);
-  L.control.layers({'🗺️ Calles':calles,'🛰️ Satelital':sat,'🏔️ Topográfico':topo},{},{position:'topright'}).addTo(mapa);
-
-  const BtnCentrar = L.Control.extend({ options:{position:'topright'},
-    onAdd(){ const d=L.DomUtil.create('div','leaflet-bar leaflet-control');
-      d.innerHTML='<a title="Centrar en datos" style="font-size:1rem;display:flex;align-items:center;justify-content:center;">🎯</a>';
-      L.DomEvent.on(d,'click',centrarMapa); return d; } });
-  new BtnCentrar().addTo(mapa);
-
-  clusterCapa = L.markerClusterGroup({maxClusterRadius:50, showCoverageOnHover:false});
-  mapa.addLayer(clusterCapa);
-  cargarDatos();
+function render(){
+  let rows=filtered();
+  if(sKey){rows=[...rows].sort((a,b)=>{const av=a[sKey],bv=b[sKey];if(typeof av==='number')return sAsc?av-bv:bv-av;return sAsc?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av));});}
+  updatePills();renderDash(rows);renderPegas(rows);renderMap(rows);renderTable(rows);
 }
-
-function centrarMapa(){
-  if(!datosActuales.length) return;
-  const coords = datosActuales.map(d=>[parseFloat(d.Latitud),parseFloat(d.Longitud)]).filter(c=>!isNaN(c[0]));
-  if(coords.length) mapa.fitBounds(L.latLngBounds(coords),{padding:[40,40]});
-  toast('Mapa centrado en los datos filtrados','🎯');
+function updatePills(){
+  const c=document.getElementById('active-filters');c.innerHTML='';
+  Object.entries(af).forEach(([k,v])=>{
+    const label=FILTER_COLS.find(f=>f.key===k)?.label||k;
+    const p=document.createElement('span');p.className='fpill';
+    p.innerHTML=`${label}: <strong>${v}</strong> ×`;
+    p.onclick=()=>{delete af[k];document.getElementById('f_'+k).value='';document.getElementById('f_'+k).classList.remove('on');render();};
+    c.append(p);
+  });
 }
-
-/* ═══════════════════════════════════════════════════════
-   CARGA DE DATOS
-═══════════════════════════════════════════════════════ */
-async function cargarDatos(){
-  setEstado('','Descargando datos…');
-  try{
-    const res = await fetch(`${ARCHIVO}?t=${Date.now()}`);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const buf  = await res.arrayBuffer();
-    const wb   = XLSX.read(new Uint8Array(buf),{type:'array'});
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    datosBrutos = rows.filter(d=>!isNaN(parseFloat(d.Latitud))&&!isNaN(parseFloat(d.Longitud)));
-    document.getElementById('s-total').textContent = datosBrutos.length;
-    setEstado('ok',`✅ ${datosBrutos.length} centros cargados`);
-    toast(`${datosBrutos.length} centros educativos cargados`,'✅');
-    crearFiltros();
-    ejecutarFiltros();
-  }catch(e){
-    setEstado('error',`❌ ${e.message}`);
-    toast('Error al cargar datos','❌');
+function barChart(id,entries,colorFn){
+  const mx=Math.max(1,...entries.map(e=>e.n));
+  document.getElementById(id).innerHTML=entries.map(e=>`<div class="brow"><div class="bl">${e.l}</div><div class="bt"><div class="bf ${colorFn(e.l)}" style="width:${Math.round(e.n/mx*100)}%">${e.n}</div></div></div>`).join('');
+}
+function renderEtapaCards(rows){
+  const n=rows.length;
+  const construccion  =rows.filter(d=>d.etapa==='Construcción').length;
+  const finalizado    =rows.filter(d=>d.etapa==='Contructivo finalizado').length;
+  const disenio       =rows.filter(d=>d.etapa==='Diseño de Carpeta').length;
+  const licitacion    =rows.filter(d=>d.etapa==='Licitación finalizada').length;
+  const disenioSAdj   =rows.filter(d=>d.etapa==='Sin adjudicar').length;
+  const sinAdj        =rows.filter(d=>d.etapa==='SIN ADJUDICAR').length;
+  const avg           =n?Math.round(rows.reduce((s,d)=>s+d.avance,0)/n*100):0;
+  const card=(cls,label,val,sub)=>`
+    <div class="ec ${cls}">
+      <div class="ec-label">${label}</div>
+      <div class="ec-val">${val}</div>
+      ${sub?`<div class="ec-sub">${sub}</div>`:''}
+    </div>`;
+  document.getElementById('etapa-cards').innerHTML=
+    card('ec-total','Total filtrado',n,`de ${baseData().length}`)+
+    card('ec-construccion','Construcción',construccion,`${n?Math.round(construccion/n*100):0}%`)+
+    card('ec-finalizado','Constr. finalizado',finalizado,`${n?Math.round(finalizado/n*100):0}%`)+
+    card('ec-disenio','Diseño de carpeta',disenio,`${n?Math.round(disenio/n*100):0}%`)+
+    card('ec-licitacion','Licitación finaliz.',licitacion,`${n?Math.round(licitacion/n*100):0}%`)+
+    card('ec-disenio-sadj','Diseño carp. s/adj.',disenioSAdj,`${n?Math.round(disenioSAdj/n*100):0}%`)+
+    card('ec-sinAdj','Sin adjudicar',sinAdj,`${n?Math.round(sinAdj/n*100):0}%`)+
+    card('ec-avance','Avance promedio',avg+'%','al 31/03/26');
+}
+function renderDistribucion(rows){
+  // Obtener grupos y deptos únicos ordenados
+  const grupos=[...new Set(rows.map(d=>d.grupo))].filter(Boolean).sort((a,b)=>a-b);
+  const deptos=[...new Set(rows.map(d=>d.depto))].filter(Boolean).sort();
+  // Construir matriz depto × grupo
+  const matriz={};
+  const totalDepto={};
+  const totalGrupo={};
+  rows.forEach(d=>{
+    if(!matriz[d.depto])matriz[d.depto]={};
+    matriz[d.depto][d.grupo]=(matriz[d.depto][d.grupo]||0)+1;
+    totalDepto[d.depto]=(totalDepto[d.depto]||0)+1;
+    totalGrupo[d.grupo]=(totalGrupo[d.grupo]||0)+1;
+  });
+  const totalGeneral=rows.length;
+  // Construir tabla
+  let html=`<table class="dist-tbl"><thead><tr>
+    <th class="dep-col">Departamento</th>
+    ${grupos.map(g=>`<th>Grupo ${g}</th>`).join('')}
+    <th class="total-col">Suma total</th>
+  </tr></thead><tbody>`;
+  deptos.forEach(dep=>{
+    html+=`<tr><td class="dep-name">${dep}</td>`;
+    grupos.forEach(g=>{
+      const v=matriz[dep]?.[g]||0;
+      html+=`<td class="${v===0?'empty-cell':''}">${v===0?'—':v}</td>`;
+    });
+    html+=`<td class="total-col">${totalDepto[dep]||0}</td></tr>`;
+  });
+  // Fila de totales
+  html+=`<tr class="total-row"><td class="dep-name">Suma total</td>`;
+  grupos.forEach(g=>{html+=`<td>${totalGrupo[g]||0}</td>`;});
+  html+=`<td class="total-col">${totalGeneral}</td></tr>`;
+  html+=`</tbody></table>`;
+  document.getElementById('dist-tabla').innerHTML=html;
+}
+function renderEmpresas(rows){
+  // Etapas relevantes para las columnas
+  const ETAPAS_COLS=[
+    {key:'Construcción',       label:'Construcción'},
+    {key:'Contructivo finalizado', label:'Constr. finalizado'},
+    {key:'Diseño de Carpeta',  label:'Diseño de Carpeta'},
+  ];
+  function buildEmpTable(containerId, campo){
+    const empresas=[...new Set(rows.map(d=>d[campo]).filter(Boolean))].sort();
+    const totEtapa={};ETAPAS_COLS.forEach(e=>{totEtapa[e.key]=0;});
+    let totalGeneral=0;
+    const matriz={};
+    rows.forEach(d=>{
+      const emp=d[campo]||'';
+      if(!emp)return;
+      if(!matriz[emp])matriz[emp]={};
+      matriz[emp][d.etapa]=(matriz[emp][d.etapa]||0)+1;
+      if(ETAPAS_COLS.find(e=>e.key===d.etapa)){totEtapa[d.etapa]=(totEtapa[d.etapa]||0)+1;totalGeneral++;}
+    });
+    let h=`<table class="emp-tbl"><thead><tr>
+      <th class="emp-col">${campo==='empresa_obras'?'Empresa adjudicada obras':'Empresa adjudicada supervisión'}</th>
+      ${ETAPAS_COLS.map(e=>`<th>${e.label}</th>`).join('')}
+      <th class="emp-total">Suma total</th>
+    </tr></thead><tbody>`;
+    empresas.forEach(emp=>{
+      const fila=matriz[emp]||{};
+      const rowTotal=ETAPAS_COLS.reduce((s,e)=>s+(fila[e.key]||0),0);
+      if(rowTotal===0)return; // omitir empresas sin datos en estas etapas
+      h+=`<tr><td class="emp-name">${emp}</td>`;
+      ETAPAS_COLS.forEach(e=>{
+        const v=fila[e.key]||0;
+        h+=`<td class="${v===0?'emp-empty':''}">${v===0?'—':v}</td>`;
+      });
+      h+=`<td class="emp-total">${rowTotal}</td></tr>`;
+    });
+    h+=`<tr class="emp-total-row"><td class="emp-name">Suma total</td>`;
+    ETAPAS_COLS.forEach(e=>{h+=`<td>${totEtapa[e.key]||0}</td>`;});
+    h+=`<td class="emp-total">${totalGeneral}</td></tr>`;
+    h+=`</tbody></table>`;
+    document.getElementById(containerId).innerHTML=h;
   }
+  buildEmpTable('emp-obras-tabla','empresa_obras');
+  buildEmpTable('emp-sup-tabla','empresa_sup');
 }
-
-/* ═══════════════════════════════════════════════════════
-   FILTROS
-═══════════════════════════════════════════════════════ */
-function crearFiltros(){
-  const cont = document.getElementById('filtros-din');
-  cont.innerHTML='';
-  CONF_FILTROS.forEach(({label,campo})=>{
-    const vals=[...new Set(datosBrutos.map(d=>d[campo]).filter(Boolean))].sort();
-    const d=document.createElement('div');
-    d.className='fi';
-    d.innerHTML=`
-      <div class="fi-head">
-        <span>${label}</span>
-        <button class="btn-analizar" id="bta-${CSS.escape(campo)}" onclick="toggleAnalisis('${campo}')">📊 Analizar</button>
-      </div>
-      <div class="fi-body">
-        <select class="fi-select" data-campo="${campo}" onchange="ejecutarFiltros()">
-          <option value="">Todos</option>
-          ${vals.map(v=>`<option value="${v}">${v}</option>`).join('')}
-        </select>
-      </div>`;
-    cont.appendChild(d);
+function renderAvanceChart(rows){
+  const RANGOS=[
+    {label:'0%',       color:'#fecaca', tc:'#991b1b', fn:v=>v===0},
+    {label:'– 10%',    color:'#fed7aa', tc:'#9a3412', fn:v=>v>0&&v<=0.10},
+    {label:'– 25%',    color:'#fef08a', tc:'#854d0e', fn:v=>v>0.10&&v<=0.25},
+    {label:'– 50%',    color:'#d9f99d', tc:'#3f6212', fn:v=>v>0.25&&v<=0.50},
+    {label:'– 70%',    color:'#bbf7d0', tc:'#166534', fn:v=>v>0.50&&v<=0.70},
+    {label:'– 80%',    color:'#99f6e4', tc:'#0f766e', fn:v=>v>0.70&&v<=0.80},
+    {label:'– 90%',    color:'#bae6fd', tc:'#075985', fn:v=>v>0.80&&v<=0.90},
+    {label:'– 99%',    color:'#c7d2fe', tc:'#3730a3', fn:v=>v>0.90&&v<1.00},
+    {label:'100%',     color:'#a5b4fc', tc:'#1e1b4b', fn:v=>v>=1.00},
+  ];
+  const FASES=[
+    {key:'Construcción',   label:'Construcción'},
+    {key:'Diseño de Carpeta', label:'Diseño de Carpeta'},
+  ];
+  function buildPanel(fase){
+    const centros=rows.filter(d=>d.etapa===fase.key);
+    const total=centros.length||1;
+    const mx=Math.max(1,...RANGOS.map(r=>centros.filter(d=>r.fn(d.avance)).length));
+    return`<div class="av-panel">
+      <div class="av-panel-title">${fase.label} <span style="font-size:9px;font-weight:400;color:#888">(${centros.length} centros)</span></div>
+      ${RANGOS.map(r=>{
+        const n=centros.filter(d=>r.fn(d.avance)).length;
+        const barW=mx>0?Math.round(n/mx*100):0;
+        const pct=Math.round(n/total*100);
+        return`<div class="av-row">
+          <div class="av-range">${r.label}</div>
+          <div class="av-track">
+            <div class="av-fill" style="width:${barW}%;background:${r.color};color:${r.tc}">
+              ${n>0&&barW>15?n:''}
+            </div>
+          </div>
+          <div class="av-count">${n}</div>
+          <div class="av-pct">${pct}%</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  const legendHtml=`<div class="av-legend">${RANGOS.map(r=>`
+    <div class="av-leg-item"><div class="av-leg-dot" style="background:${r.color};border:1px solid ${r.tc}22"></div>${r.label}</div>`).join('')}
+  </div>`;
+  document.getElementById('avance-chart').innerHTML=
+    `<div class="av-wrap">${FASES.map(f=>buildPanel(f)).join('')}</div>${legendHtml}`;
+}
+function renderDash(rows){
+  renderEtapaCards(rows);
+  renderDistribucion(rows);
+  renderEmpresas(rows);
+  renderAvanceChart(rows);
+  const impl=rows.filter(d=>d.estado_pegas==='Implementado').length;
+  const ejec=rows.filter(d=>d.estado_pegas==='Ejecución').length,elab=rows.filter(d=>d.estado_pegas==='Elaboración').length;
+  const esi=rows.filter(d=>d.estado_pegas==='Elaborado sin iniciar').length,sel=rows.filter(d=>d.estado_pegas==='Sin elaborar').length;
+  barChart('ch-pegas',[{l:'Implementado',n:impl},{l:'Ejecución',n:ejec},{l:'Elaboración',n:elab},{l:'Elab. sin iniciar',n:esi},{l:'Sin elaborar',n:sel}],l=>l==='Implementado'?'f-g':l==='Sin elaborar'?'f-r':(l==='Elab. sin iniciar'?'f-a':'f-b'));
+  const etc={};rows.forEach(d=>{const k=d.etapa.length>18?d.etapa.slice(0,18)+'…':d.etapa;etc[k]=(etc[k]||0)+1;});
+  barChart('ch-etapa',Object.entries(etc).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([l,n])=>({l,n})),()=>'f-b');
+  const dpc={};rows.forEach(d=>{dpc[d.depto]=(dpc[d.depto]||0)+1;});
+  barChart('ch-depto',Object.entries(dpc).sort((a,b)=>b[1]-a[1]).map(([l,n])=>({l,n})),()=>'f-b');
+}
+function renderPegas(rows){
+  const n=rows.length,impl=rows.filter(d=>d.estado_pegas==='Implementado').length;
+  const ejec=rows.filter(d=>d.estado_pegas==='Ejecución').length,elab=rows.filter(d=>d.estado_pegas==='Elaboración').length;
+  const esi=rows.filter(d=>d.estado_pegas==='Elaborado sin iniciar').length,sel=rows.filter(d=>d.estado_pegas==='Sin elaborar').length;
+  const conRA=rows.filter(d=>d.fecha_ra).length,sinT=rows.filter(d=>d.ra==='Sin tramitar').length;
+  const avg=n?Math.round(rows.reduce((s,d)=>s+d.avance,0)/n*100):0;
+  // Tarjetas estado PEGAS
+  const card=(cls,label,val,sub)=>`<div class="ec ${cls}">
+    <div class="ec-label">${label}</div>
+    <div class="ec-val">${val}</div>
+    ${sub?`<div class="ec-sub">${sub}</div>`:''}
+  </div>`;
+  document.getElementById('pegas-cards').innerHTML=
+    card('ec-total',    'Total filtrado',         n,         `de ${baseData().length}`)+
+    card('ec-finalizado','Implementado / Finaliz.',impl,      `${n?Math.round(impl/n*100):0}%`)+
+    card('ec-construccion','Ejecución',            ejec,      `${n?Math.round(ejec/n*100):0}%`)+
+    card('ec-disenio',  'Elaboración',             elab,      `${n?Math.round(elab/n*100):0}%`)+
+    card('ec-licitacion','Elaborado sin iniciar',  esi,       `${n?Math.round(esi/n*100):0}%`)+
+    card('ec-sinAdj',   'Sin elaborar',            sel,       `${n?Math.round(sel/n*100):0}%`)+
+    card('ec-avance',   'Avance promedio',         avg+'%',   'al 31/03/26');
+  // Tarjetas secundarias (mantener)
+  document.getElementById('pegas-metrics').innerHTML=`
+    <div class="mc"><div class="ml">Con fecha RA</div><div class="mv vg">${conRA}</div></div>
+    <div class="mc"><div class="ml">Sin tramitar RA</div><div class="mv vr">${sinT}</div></div>`;
+  const est={};rows.forEach(d=>{est[d.estado_pegas]=(est[d.estado_pegas]||0)+1;});
+  barChart('pch-estado',Object.entries(est).sort((a,b)=>b[1]-a[1]).map(([l,n])=>({l,n})),l=>l==='Implementado'?'f-g':(l==='Sin elaborar'?'f-r':(l==='Elaborado sin iniciar'?'f-a':'f-b')));
+  const reu={};rows.forEach(d=>{if(d.reubicacion){const k=d.reubicacion.length>20?d.reubicacion.slice(0,20)+'…':d.reubicacion;reu[k]=(reu[k]||0)+1;}});
+  barChart('pch-reubicacion',Object.entries(reu).sort((a,b)=>b[1]-a[1]).slice(0,7).map(([l,n])=>({l,n})),()=>'f-b');
+  document.getElementById('pegas-body').innerHTML=rows.length?rows.map(d=>`<tr>
+    <td>${d.grupo}</td><td>${d.codigo}</td><td title="${d.centro}">${d.centro}</td><td>${d.depto}</td>
+    <td title="${d.empresa_obras}">${d.empresa_obras}</td><td>${d.admin||'—'}</td><td title="${d.etapa}">${d.etapa}</td>
+    <td><div style="font-size:9px;font-weight:600">${Math.round(d.avance*100)}%</div><div class="pbar"><div class="pfill" style="width:${d.avance*100}%;background:${pc(d.avance)}"></div></div></td>
+    <td><span class="badge ${bc(d.estado_pegas)}">${d.estado_pegas}</span></td>
+    <td title="${d.reubicacion||''}">${d.reubicacion||'—'}</td>
+    <td style="font-size:9px;color:#888" title="${d.ra||''}">${d.ra||'—'}</td>
+    <td>${d.fecha_ra?`<span style="font-size:9px;font-weight:600;color:#16a34a">${d.fecha_ra}</span>`:`<span style="font-size:9px;opacity:.4">—</span>`}</td>
+  </tr>`).join(''):`<tr><td colspan="12" class="empty-row">Sin resultados</td></tr>`;
+}
+// Paleta de colores para indicadores categóricos
+const PALETA=[
+  '#3b82f6','#16a34a','#d97706','#dc2626','#7c3aed',
+  '#0891b2','#ea580c','#65a30d','#db2777','#0369a1',
+  '#15803d','#b45309','#9333ea','#0e7490','#c2410c',
+  '#4f46e5','#047857','#b91c1c','#6d28d9','#0284c7'
+];
+// Colores fijos para estado_pegas
+function colorPegas(val){
+  if(val==='Implementado')return'#22c55e';
+  if(val==='Ejecución'||val==='Elaboración')return'#3b82f6';
+  if(val==='Elaborado sin iniciar')return'#f59e0b';
+  return'#94a3b8';
+}
+function renderMap(rows){
+  window._lastMapRows=rows;
+  const indicador=document.getElementById('mapa-indicador')?.value||'estado_pegas';
+  // Construir mapa de valor → color
+  const colorMap={};
+  if(indicador==='estado_pegas'){
+    ['Implementado','Ejecución','Elaboración','Elaborado sin iniciar','Sin elaborar'].forEach(v=>{colorMap[v]=colorPegas(v);});
+  } else {
+    const vals=[...new Set(baseData().map(d=>String(d[indicador]||'—')))].sort();
+    vals.forEach((v,i)=>{colorMap[v]=PALETA[i%PALETA.length];});
+  }
+  function getColor(d){
+    const v=String(d[indicador]||'—');
+    return colorMap[v]||'#94a3b8';
+  }
+  // Inicializar mapa Leaflet solo una vez
+  if(!window._mapaLeaflet){
+    window._mapaLeaflet=L.map('mapa-leaflet',{zoomControl:true}).setView([13.8,-88.9],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom:18
+    }).addTo(window._mapaLeaflet);
+    window._mapaCapaMarkers=L.layerGroup().addTo(window._mapaLeaflet);
+  }
+  window._mapaCapaMarkers.clearLayers();
+  const base=baseData();
+  const filtrados=new Set(rows);
+  base.forEach(d=>{
+    if(!d.lat||!d.lon)return;
+    const activo=filtrados.has(d);
+    const color=activo?getColor(d):'#94a3b8';
+    const fillOp=activo?0.92:0.15;
+    const strokeOp=activo?1:0.2;
+    const radio=activo?7:4;
+    const marker=L.circleMarker([d.lat,d.lon],{
+      radius:radio,fillColor:color,color:'#fff',
+      weight:1.5,opacity:strokeOp,fillOpacity:fillOp
+    });
+    const val=String(d[indicador]||'—');
+    marker.bindPopup(`
+      <strong style="font-size:11px;display:block;margin-bottom:4px;line-height:1.3">${d.centro}</strong>
+      <span style="font-size:10px;color:#555">${d.depto} · ${d.distrito}</span><br>
+      <span style="font-size:10px;color:#555">Etapa: ${d.etapa}</span><br>
+      <span style="font-size:10px;color:#555">PEGAS: ${d.estado_pegas}</span><br>
+      <span style="font-size:10px;color:#555">Avance: ${Math.round(d.avance*100)}%</span><br>
+      <span style="font-size:10px;font-weight:600" style="color:${color}">▶ ${val}</span>
+      ${d.fecha_ra?`<br><span style="font-size:10px;color:#16a34a">Fecha RA: ${d.fecha_ra}</span>`:''}
+    `,{maxWidth:240});
+    window._mapaCapaMarkers.addLayer(marker);
   });
-}
-
-function ejecutarFiltros(){
-  const busq1 = (document.getElementById('busqueda').value||'').trim().toLowerCase();
-  const busq2 = (document.getElementById('busqueda2').value||'').trim().toLowerCase();
-  const busq  = busq1||busq2;
-
-  document.getElementById('btn-sc').style.display  = busq1?'block':'none';
-  document.getElementById('btn-sc2').style.display = busq2?'block':'none';
-
-  const sels = [...document.querySelectorAll('.fi-select')];
-  datosActuales = datosBrutos.filter(d=>{
-    const mb = (d['Centro Educativo']||'').toString().toLowerCase().includes(busq)||
-               (d['Código']||'').toString().toLowerCase().includes(busq);
-    const ms = sels.every(s=>!s.value||String(d[s.dataset.campo])===s.value);
-    return mb&&ms;
-  });
-
-  document.getElementById('s-mapa').textContent    = datosActuales.length;
-  document.getElementById('s-analisis').textContent= camposAnalisis.length;
-  document.getElementById('ov-count').textContent  = datosActuales.length;
-
-  actualizarMapa(datosActuales);
-  actualizarTabla(datosActuales);
-  actualizarGraficos(datosActuales);
-  actualizarLeyenda(datosActuales);
-  actualizarChips();
-}
-
-function sincBusq(origen){
-  const v1 = document.getElementById('busqueda');
-  const v2 = document.getElementById('busqueda2');
-  if(origen===2) v1.value=v2.value; else v2.value=v1.value;
-  debouncedFiltros();
-}
-
-function limpiarBusq(){  document.getElementById('busqueda').value='';  document.getElementById('busqueda2').value=''; ejecutarFiltros(); }
-function limpiarBusq2(){ document.getElementById('busqueda2').value=''; document.getElementById('busqueda').value='';  ejecutarFiltros(); }
-
-function limpiarTodo(){
-  document.getElementById('busqueda').value='';
-  document.getElementById('busqueda2').value='';
-  document.querySelectorAll('.fi-select').forEach(s=>s.value='');
-  ejecutarFiltros();
-  toast('Filtros limpiados','🗑️');
-}
-
-/* ═══════════════════════════════════════════════════════
-   MARCADORES EN EL MAPA
-═══════════════════════════════════════════════════════ */
-function actualizarMapa(datos){
-  clusterCapa.clearLayers();
-  const cf = camposAnalisis[camposAnalisis.length-1];
-  const cats = cf ? [...new Set(datosBrutos.map(d=>d[cf]).filter(Boolean))].sort() : [];
-
-  datos.forEach(p=>{
-    const lat=parseFloat(p.Latitud), lng=parseFloat(p.Longitud);
-    if(isNaN(lat)||isNaN(lng)) return;
-    const col = cf ? PALETA[cats.indexOf(p[cf])%PALETA.length] : PALETA[0];
-    const mk  = L.circleMarker([lat,lng],{radius:9,fillColor:col,color:'#fff',weight:1.8,fillOpacity:.92});
-
-    const filas = Object.entries(p)
-      .filter(([k])=>k!=='Latitud'&&k!=='Longitud')
-      .map(([k,v])=>`<tr><td>${k}</td><td>${v??'—'}</td></tr>`).join('');
-
-    mk.bindPopup(`
-      <div class="pop-card">
-        <div class="pop-header">
-          <h3>🏫 ${p['Centro Educativo']||'Sin nombre'}</h3>
-          <small>Cód: ${p['Código']||'—'} · ${p['Departamento']||'—'}</small>
-        </div>
-        <table class="pop-table">${filas}</table>
-        <button class="btn-gps" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}','_blank')">
-          🧭 Navegar con GPS
-        </button>
-      </div>`,{maxWidth:310});
-
-    mk.on('click',()=>resaltarFila(p['Código']));
-    clusterCapa.addLayer(mk);
-  });
-}
-
-/* ═══════════════════════════════════════════════════════
-   LEYENDA
-═══════════════════════════════════════════════════════ */
-function actualizarLeyenda(datos){
-  if(leyendaCtrl) mapa.removeControl(leyendaCtrl);
-  const cf=camposAnalisis[camposAnalisis.length-1];
-  if(!cf) return;
-  const cats=[...new Set(datos.map(d=>d[cf]).filter(Boolean))].sort();
-  const items=cats.slice(0,12).map((c,i)=>
-    `<div class="leg-item"><div class="leg-dot" style="background:${PALETA[i%PALETA.length]}"></div><span>${c}</span></div>`).join('');
-  leyendaCtrl=L.control({position:'bottomright'});
-  leyendaCtrl.onAdd=()=>{
-    const d=L.DomUtil.create('div','mapa-leyenda');
-    d.innerHTML=`<h4>${cf}</h4>${items}${cats.length>12?`<small style="color:rgba(255,255,255,.4)">+${cats.length-12} más</small>`:''}`;
-    return d;
-  };
-  leyendaCtrl.addTo(mapa);
-}
-
-/* ═══════════════════════════════════════════════════════
-   TABLA DINÁMICA
-═══════════════════════════════════════════════════════ */
-function actualizarTabla(datos){
-  const thead = document.getElementById('tabla-thead');
-  thead.innerHTML = `<tr>
-    <th style="width:36px">#</th>
-    <th>Código</th>
-    <th>Centro Educativo</th>
-    ${camposAnalisis.map(c=>`<th class="dyn-col">📊 ${c}</th>`).join('')}
-  </tr>`;
-
-  const tbody = document.getElementById('tabla-body');
-  tbody.innerHTML = datos.map((p,i)=>{
-    const dynCols = camposAnalisis.map(c=>`<td class="dyn-val">${p[c]??'—'}</td>`).join('');
-    return `
-    <tr data-cod="${p['Código']}"
-        onclick="volarA(${parseFloat(p.Latitud)},${parseFloat(p.Longitud)},'${p['Código']}')">
-      <td style="color:#94a3b8;font-size:.68rem;">${i+1}</td>
-      <td><b>${p['Código']||'—'}</b></td>
-      <td title="${p['Centro Educativo']||''}">${p['Centro Educativo']||'—'}</td>
-      ${dynCols}
-    </tr>`;
-  }).join('');
-
-  document.getElementById('t-badge').textContent = datos.length;
-}
-
-function resaltarFila(codigo){
-  document.querySelectorAll('#tabla-body tr').forEach(tr=>{
-    tr.classList.toggle('selected', tr.dataset.cod==codigo);
-  });
-  const f=document.querySelector(`#tabla-body tr[data-cod="${codigo}"]`);
-  if(f) f.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-function volarA(lat,lng,cod){
-  if(!isNaN(lat)&&!isNaN(lng)) mapa.flyTo([lat,lng],16,{duration:1.2});
-  resaltarFila(cod);
-}
-
-/* ═══════════════════════════════════════════════════════
-   CHIPS DE FILTROS ACTIVOS
-═══════════════════════════════════════════════════════ */
-function actualizarChips(){
-  const cont = document.getElementById('filter-chips');
-  const sels = [...document.querySelectorAll('.fi-select')].filter(s=>s.value);
-  cont.innerHTML = sels.map(s=>
-    `<div class="af-chip">⚙️ ${CONF_FILTROS.find(c=>c.campo===s.dataset.campo)?.label||s.dataset.campo}: <b>${s.value}</b></div>`
-  ).join('') + camposAnalisis.map(c=>
-    `<div class="af-chip" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--green);">📊 ${c}</div>`
+  // Leyenda dinámica
+  const leyenda=document.getElementById('mapa-leyenda');
+  leyenda.innerHTML=Object.entries(colorMap).map(([v,c])=>
+    `<div class="li"><div class="ld" style="background:${c}"></div><span style="font-size:9px">${v.length>28?v.slice(0,28)+'…':v}</span></div>`
   ).join('');
 }
-
-/* ═══════════════════════════════════════════════════════
-   ANÁLISIS / GRÁFICOS
-═══════════════════════════════════════════════════════ */
-function toggleAnalisis(campo){
-  const idx=camposAnalisis.indexOf(campo);
-  const btn=document.getElementById(`bta-${CSS.escape(campo)}`);
-  if(idx>-1){
-    camposAnalisis.splice(idx,1);
-    btn.classList.remove('active');
-    btn.innerHTML='📊 Analizar';
-  } else {
-    camposAnalisis.push(campo);
-    btn.classList.add('active');
-    btn.innerHTML='✅ Activo';
-  }
-  if(camposAnalisis.length) switchTab('graficos');
-  ejecutarFiltros();
+function renderTable(rows){
+  document.getElementById('tcount').textContent=`${rows.length} de ${baseData().length}`;
+  if(!rows.length){document.getElementById('tbody').innerHTML=`<tr><td colspan="${TABLE_COLS.length}" class="empty-row">Sin resultados</td></tr>`;return;}
+  document.getElementById('tbody').innerHTML=rows.map(d=>'<tr>'+TABLE_COLS.map(c=>{
+    const v=d[c.k];
+    if(c.k==='avance')return`<td><div style="font-size:9px;font-weight:600">${Math.round(v*100)}%</div><div class="pbar"><div class="pfill" style="width:${v*100}%;background:${pc(v)}"></div></div></td>`;
+    if(c.k==='estado_pegas')return`<td><span class="badge ${bc(v)}">${v}</span></td>`;
+    return`<td title="${v||''}">${v||'—'}</td>`;
+  }).join('')+'</tr>').join('');
 }
-
-function actualizarGraficos(datos){
-  Object.values(graficos).forEach(g=>g.destroy());
-  graficos={};
-  const cont=document.getElementById('contenedor-graficos');
-  cont.innerHTML='';
-  if(!camposAnalisis.length){
-    cont.innerHTML='<div style="color:var(--gray400);font-size:.78rem;text-align:center;padding:20px 0;">Activa el botón <b style="color:var(--green)">📊 Analizar</b> en los filtros para ver gráficos aquí.</div>';
-    return;
-  }
-  camposAnalisis.forEach(campo=>{
-    const conteo={};
-    datos.forEach(d=>{ const v=d[campo]||'N/A'; conteo[v]=(conteo[v]||0)+1; });
-    const labels=Object.keys(conteo), values=Object.values(conteo);
-    const tipo=labels.length<=5?'doughnut':'bar';
-
-    const box=document.createElement('div');
-    box.className='chart-box';
-    box.innerHTML=`<div class="chart-box-title">${campo}</div>
-      <canvas id="ch-${campo}" height="${tipo==='doughnut'?150:170}"></canvas>`;
-    cont.appendChild(box);
-
-    graficos[campo]=new Chart(document.getElementById(`ch-${campo}`),{
-      type:tipo,
-      data:{labels,datasets:[{data:values,backgroundColor:PALETA.slice(0,labels.length),borderColor:'transparent',borderWidth:2}]},
-      options:{
-        indexAxis:tipo==='bar'?'y':undefined,responsive:true,
-        plugins:{
-          legend:{display:tipo==='doughnut',position:'bottom',labels:{color:getComputedStyle(document.body).getPropertyValue('--gray600')||'#475569',font:{size:9},boxWidth:10}},
-          tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${Math.round(c.raw/datos.length*100)}%)`}}
-        },
-        scales:tipo==='bar'?{
-          x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},
-          y:{ticks:{color:'#475569',font:{size:8}},grid:{color:'rgba(0,0,0,.05)'}}
-        }:{}
-      }
-    });
-  });
+function sortBy(k){
+  sKey===k?(sAsc=!sAsc):(sKey=k,sAsc=true);
+  document.querySelectorAll('thead th').forEach(t=>{t.style.color='';});
+  const th=document.getElementById('th_'+k);if(th)th.style.color='#2563eb';
+  render();
 }
-
-/* ═══════════════════════════════════════════════════════
-   TOGGLE TABLA
-═══════════════════════════════════════════════════════ */
-function toggleTabla(){
-  const panel = document.getElementById('tabla-panel');
-  const btn   = document.getElementById('btn-toggle-tb');
-  tablaColapsada = !tablaColapsada;
-  panel.style.height = tablaColapsada ? '38px' : '220px';
-  btn.textContent    = tablaColapsada ? '▲' : '▼';
+function sw(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('panel-'+id).classList.add('on');
+  if(id==='mapa'){ setTimeout(()=>{ if(window._mapaLeaflet)window._mapaLeaflet.invalidateSize(); },50); }
 }
-
-/* Drag para redimensionar tabla */
-(function(){
-  const handle = document.getElementById('tabla-drag-handle');
-  const panel  = document.getElementById('tabla-panel');
-  let drag=false, startY=0, startH=0;
-  handle.addEventListener('mousedown',e=>{
-    if(e.target.closest('button')) return;
-    drag=true; startY=e.clientY; startH=panel.offsetHeight;
-    document.body.style.userSelect='none';
-  });
-  document.addEventListener('mousemove',e=>{
-    if(!drag) return;
-    const delta = startY - e.clientY;
-    panel.style.height = Math.max(38,Math.min(420,startH+delta))+'px';
-    tablaColapsada = false;
-    document.getElementById('btn-toggle-tb').textContent='▼';
-  });
-  document.addEventListener('mouseup',()=>{ drag=false; document.body.style.userSelect=''; });
-})();
-
-/* ═══════════════════════════════════════════════════════
-   EXPORTAR MAPA JPG
-   - Renderiza el mapa con tiles reales usando Leaflet
-   - Título dinámico según filtros activos
-   - Incluye tabla debajo sin mover los puntos
-═══════════════════════════════════════════════════════ */
-async function exportarMapa(){
-  toast('Preparando exportación…','🗺️');
-
-  // ── Construir título dinámico según filtros activos ──
-  const selsActivos = [...document.querySelectorAll('.fi-select')].filter(s=>s.value);
-  let tituloFiltros = 'Todos los centros educativos';
-  if(selsActivos.length){
-    tituloFiltros = selsActivos.map(s=>{
-      const lbl = CONF_FILTROS.find(c=>c.campo===s.dataset.campo)?.label || s.dataset.campo;
-      return `${lbl}: ${s.value}`;
-    }).join('  |  ');
-  }
-  const busq = (document.getElementById('busqueda').value||'').trim();
-  if(busq) tituloFiltros += `  |  Búsqueda: "${busq}"`;
-  const analisisActivo = camposAnalisis.length ? `  |  Análisis: ${camposAnalisis.join(', ')}` : '';
-
-  // ── Capturar el mapa sin mover/animar puntos ──
-  // Forzamos invalidateSize para que Leaflet no mueva markers
-  mapa.invalidateSize();
-
-  // Esperar que los tiles estén completamente cargados
-  await new Promise(resolve=>{
-    const checkTiles = () => {
-      const loading = document.querySelector('.leaflet-tile-pane .leaflet-tile-loaded');
-      if(loading || datosBrutos.length === 0) resolve();
-      else setTimeout(checkTiles, 200);
-    };
-    setTimeout(resolve, 800); // máximo 800ms de espera
-  });
-
-  const mapEl = document.getElementById('map');
-  const mapRect = mapEl.getBoundingClientRect();
-
-  // Captura del canvas del mapa
-  const mapaCanvas = await html2canvas(mapEl, {
-    useCORS: true,
-    allowTaint: true,
-    scale: 2,
-    logging: false,
-    width: mapRect.width,
-    height: mapRect.height,
-    scrollX: 0,
-    scrollY: 0
-  });
-
-  // ── Construir tabla ──
-  const colsExtra = camposAnalisis;
-  const cabeceras = ['#','Código','Centro Educativo',...colsExtra];
-  const filasDat  = datosActuales.map((p,i)=>[
-    i+1,
-    p['Código']||'—',
-    p['Centro Educativo']||'—',
-    ...colsExtra.map(c=>p[c]||'—')
-  ]);
-
-  // ── Canvas de tabla ──
-  const colW   = [40, 110, 280, ...colsExtra.map(()=>170)];
-  const totalW = colW.reduce((a,b)=>a+b,0) + 32;
-  const rowH   = 28, headerH = 36, padV = 12;
-  const totalH = headerH + filasDat.length * rowH + padV * 2;
-
-  const tabCanvas = document.createElement('canvas');
-  tabCanvas.width  = totalW * 2;
-  tabCanvas.height = totalH * 2;
-  tabCanvas.style.width  = totalW + 'px';
-  tabCanvas.style.height = totalH + 'px';
-  const ctx = tabCanvas.getContext('2d');
-  ctx.scale(2,2);
-
-  // Fondo blanco
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, totalW, totalH);
-
-  // Cabecera
-  ctx.fillStyle = '#0a1628';
-  ctx.fillRect(0, padV, totalW, headerH);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 11px Segoe UI, sans-serif';
-  let cx = 16;
-  cabeceras.forEach((c,i)=>{
-    ctx.fillText(String(c).substring(0,26), cx, padV + headerH/2 + 4);
-    cx += colW[i];
-  });
-
-  // Filas de datos
-  filasDat.forEach((row, ri)=>{
-    const y = padV + headerH + ri * rowH;
-    ctx.fillStyle = ri % 2 === 0 ? '#f8fafc' : '#ffffff';
-    ctx.fillRect(0, y, totalW, rowH);
-
-    ctx.font = '10px Segoe UI, sans-serif';
-    let rx = 16;
-    row.forEach((v,ci)=>{
-      ctx.fillStyle = ci > 2 ? '#1d4ed8' : '#1e293b';
-      const maxLen = ci === 2 ? 40 : (ci === 0 ? 5 : 18);
-      ctx.fillText(String(v).substring(0, maxLen), rx, y + rowH/2 + 4);
-      rx += colW[ci];
-    });
-
-    // Separador de fila
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(0, y + rowH);
-    ctx.lineTo(totalW, y + rowH);
-    ctx.stroke();
-  });
-
-  // ── Canvas final combinado ──
-  const PAD       = 24;
-  const TITLE_H   = 80;
-  const FOOTER_H  = 28;
-  const GAP       = 20;
-  const imgW      = mapaCanvas.width;  // ya está a scale:2
-  const tabW      = tabCanvas.width;
-  const finalW    = Math.max(imgW, tabW) + PAD * 4;
-  const finalH    = TITLE_H + imgW * (mapRect.height / mapRect.width) + GAP + tabCanvas.height + FOOTER_H + PAD * 2;
-
-  const finalCanvas = document.createElement('canvas');
-  finalCanvas.width  = finalW;
-  finalCanvas.height = finalH;
-  const fc = finalCanvas.getContext('2d');
-
-  // Fondo
-  fc.fillStyle = '#f0f4f8';
-  fc.fillRect(0, 0, finalW, finalH);
-
-  // Banda de título
-  fc.fillStyle = '#0a1628';
-  fc.fillRect(0, 0, finalW, TITLE_H);
-
-  // Título principal
-  fc.fillStyle = '#ffffff';
-  fc.font = 'bold 22px Segoe UI, sans-serif';
-  fc.fillText('Programa Mi Nueva Escuela MINEDUCYT BCIE 2256', PAD * 2, 30);
-
-  // Subtítulo con filtros
-  fc.fillStyle = 'rgba(255,255,255,0.7)';
-  fc.font = '14px Segoe UI, sans-serif';
-  const subTitulo = tituloFiltros + analisisActivo;
-  fc.fillText(subTitulo.substring(0, 120), PAD * 2, 56);
-
-  // Fecha y conteo
-  const fecha = new Date().toLocaleDateString('es-SV',{day:'2-digit',month:'long',year:'numeric'});
-  fc.fillStyle = 'rgba(255,255,255,0.45)';
-  fc.font = '12px Segoe UI, sans-serif';
-  fc.fillText(`${datosActuales.length} centros · ${fecha}`, PAD * 2, 74);
-
-  // Imagen del mapa (manteniendo proporción original)
-  const mapaDrawH = Math.round(imgW * (mapRect.height / mapRect.width));
-  const mapaX     = PAD * 2;
-  const mapaY     = TITLE_H + PAD;
-  fc.drawImage(mapaCanvas, mapaX, mapaY, imgW, mapaDrawH);
-
-  // Borde sutil al mapa
-  fc.strokeStyle = 'rgba(0,0,0,0.1)';
-  fc.lineWidth   = 2;
-  fc.strokeRect(mapaX, mapaY, imgW, mapaDrawH);
-
-  // Tabla
-  const tabX = PAD * 2;
-  const tabY = mapaY + mapaDrawH + GAP;
-  fc.drawImage(tabCanvas, tabX, tabY);
-
-  // Footer
-  fc.fillStyle = '#64748b';
-  fc.font = '11px Segoe UI, sans-serif';
-  fc.fillText('Generado por el Sistema de Monitoreo MINEDUCYT – BCIE 2256', PAD * 2, finalH - 10);
-
-  // ── Descargar como JPG ──
-  const nombreFiltro = selsActivos.length
-    ? selsActivos.map(s=>s.value).join('_').replace(/\s+/g,'_').substring(0,40)
-    : 'Todos';
-  const link = document.createElement('a');
-  link.download = `Mapa_MINEDUCYT_${nombreFiltro}_${new Date().toISOString().slice(0,10)}.jpg`;
-  link.href = finalCanvas.toDataURL('image/jpeg', 0.93);
-  link.click();
-
-  toast('Mapa exportado como JPG','✅');
+function resetAll(){
+  Object.keys(af).forEach(k=>delete af[k]);
+  document.querySelectorAll('.fs').forEach(s=>{s.value='';s.classList.remove('on');});
+  document.getElementById('gs').value='';sKey=null;sAsc=true;render();
 }
-
-function exportarExcel(){
-  if(!datosActuales.length){ toast('Sin datos para exportar','⚠️'); return; }
-  const cols = ['Código','Centro Educativo',...camposAnalisis];
-  const filas = datosActuales.map(p=>{
-    const obj={};
-    cols.forEach(c=>obj[c]=p[c]??'—');
-    return obj;
-  });
-  const ws=XLSX.utils.json_to_sheet(filas);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Centros');
-  XLSX.writeFile(wb,`Centros_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast(`${datosActuales.length} registros exportados`,'📊');
-}
-
-/* ═══════════════════════════════════════════════════════
-   INICIO
-═══════════════════════════════════════════════════════ */
-window.onload = iniciarMapa;
+buildFilters();buildHeader();updateVistasBadges();render();
 </script>
 </body>
 </html>
